@@ -1,3 +1,7 @@
+# Developed & executed on Python 3.14 with (loose pins for Colab friendliness):
+#   numpy 2.5.2  pandas 3.0.5  scipy 1.18.1  scikit-learn 1.9.0  nltk 3.10.3
+#   matplotlib 3.11.1  seaborn 0.13.2  jupyterlab 4.6.3  nbconvert 7.17.1
+#
 # Core
 numpy
 pandas

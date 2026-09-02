@@ -7,16 +7,23 @@ Living checklist. Update at the end of every work session; keep the "current sta
 
 - **Milestone 1 — repo scaffold + docs: DONE.**
 - **Dataset chosen:** IMDB 50K Movie Reviews (`atulanandjha/imdb-50k-movie-reviews-test-your-bert`).
-- Notebook not started.
-- **Next action:** build Part 1 of `notebook.ipynb` — download data, load train/test from the
-  dataset's own `type` split, `.head()` of each, class-balance chart, student-details +
-  AI-prompts cells, one-paragraph problem description.
+- **Milestone 2 — Part 1: IN PROGRESS.**
+  - `.venv` built with the full stack (`requirements.txt`).
+  - `tools/build_notebook.py` written — Part 1 (title/students, AI-prompts, problem+dataset
+    description, setup, `load_imdb()`, `.head()` of each, EDA/class-balance) + quality-index
+    section with `score()`.
+  - `notebook.ipynb` generated, code cells parse, imports + `score()` smoke-tested in the venv.
+  - **Blocked on:** Kaggle token (`~/.kaggle/kaggle.json`) to download the data and execute.
+- **Next action:** with the token in place — execute the notebook, confirm 25k/25k balanced
+  split and `imdb_master.csv` schema (`Unnamed: 0,type,review,label,file`, latin-1), then extend
+  the builder with Part 2 (feature engineering).
 
 ## Milestones
 
 - [x] 1. Repo scaffold: `CLAUDE.md`, `README.md`, `requirements.txt`, `.gitignore`, `docs/`.
-- [ ] 2. Part 1 — data load (train/test via `imdb_master.csv` `type` column), `.head()` of each,
+- [~] 2. Part 1 — data load (train/test via `imdb_master.csv` `type` column), `.head()` of each,
       one-paragraph description, class-balance chart, student-details + AI-prompts cells.
+      *(written in the builder; awaiting Kaggle token to execute)*
 - [ ] 3. Part 2 — feature engineering (clean/tokenize, vectorizer factory) + 2–3-example demo
       on train and test.
 - [ ] 4. Part 3 — `NaiveBayesTextClassifier` from scratch (Multinomial + Bernoulli) + parity

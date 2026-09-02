@@ -17,9 +17,12 @@ notebook with committed outputs + a ~5-minute explainer video.
 
 ## Current status / next step
 
-> **Status:** milestone 1 done (repo scaffold + docs). Dataset chosen. Notebook not started.
-> **Next:** build Part 1 of `notebook.ipynb` — data download, load train/test from the dataset's
-> own split, `.head()` of each, class-balance chart, student-details + AI-prompts cells.
+> **Status:** milestone 2 in progress. `.venv` built (numpy/pandas/sklearn/nltk/jupyter — see
+> `requirements.txt`). Notebook generator `tools/build_notebook.py` written with **Part 1 +
+> quality-index section**; `notebook.ipynb` generated but **not yet executed** (needs the Kaggle
+> token at `~/.kaggle/kaggle.json` to download the data).
+> **Next:** once the token is in place — run `load_imdb()`, verify the 25k/25k split, execute the
+> notebook, then extend the builder with Part 2 (feature engineering).
 
 Update this block and `docs/PROGRESS.md` at the end of every work session.
 
@@ -51,9 +54,17 @@ Update this block and `docs/PROGRESS.md` at the end of every work session.
 - Before any push: `gh auth switch --user Tomer-Raz` (multiple gh accounts exist on this machine;
   `Tomer-Raz` is not always the active one).
 - Commit messages: plain, imperative subject line (e.g. `Add Part 2 feature engineering`).
-- **Notebook-first.** `notebook.ipynb` is the single source of truth for the algorithm and
-  feature-engineering code — the brief requires the code to be visible in the notebook.
-  `src/` and `tests/` are optional iteration scratch; if added, keep them a copy, not a fork.
+- **The notebook is generated.** Edit `tools/build_notebook.py` (each cell is an `md(...)` /
+  `code(...)` call), then regenerate + execute:
+  ```
+  .venv/bin/python tools/build_notebook.py
+  .venv/bin/jupyter nbconvert --to notebook --execute --inplace \
+      --ExecutePreprocessor.timeout=2400 notebook.ipynb
+  ```
+  **Never hand-edit `notebook.ipynb`.** The generated notebook still has all code inline and
+  visible, as the brief requires. Constraint in the builder: cell sources are r-strings, so no
+  triple-quotes inside them (use `#` comments in code cells, not docstrings).
+- `src/` and `tests/` are optional iteration scratch; if added, keep them a copy, not a fork.
 - Implement Naive Bayes **ourselves**. `scikit-learn` is allowed **only** for: vectorizers
   (`CountVectorizer` / `TfidfVectorizer`), `StratifiedKFold`, the metric functions, and a one-off
   parity check against `MultinomialNB`. Never as the model.
