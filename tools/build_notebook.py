@@ -274,6 +274,190 @@ print("score() smoke test:", round(score([0, 0, 1, 1, 1], [0, 1, 1, 1, 0]), 4))
 """)
 
 # ==========================================================================================
+# 2. Part 2 - Feature engineering
+# ==========================================================================================
+md(r"""
+---
+## Part 2 - Feature engineering
+
+A learning algorithm needs numbers, not prose. Feature engineering is the process of turning each
+raw review into a fixed-length numeric vector. For text the standard pipeline is:
+
+**1. Text cleaning / normalisation.** Lower-case everything (so *Great* and *great* are the same
+token), strip the HTML that litters these reviews (`<br />`), drop URLs, and remove digits and
+punctuation. This shrinks the vocabulary to the parts that carry meaning.
+
+**2. Tokenisation.** Split the cleaned string into *tokens* (here: runs of >= 2 letters). A review
+becomes a list of words.
+
+**3. Optional token filtering.**
+- *Stop-word removal* - drop extremely common words (`the`, `is`, `and`, ...). It trims noise, but
+  note that English stop-word lists also contain `not`, `no`, `very`, `never` - words that clearly
+  matter for **sentiment** - so for this task removing them can *hurt*. We therefore make it a knob
+  and test both settings in Part 6a.
+- *Stemming* - chop words to a common root (`amazing`, `amazed`, `amazingly` -> `amaz`) with the
+  Porter stemmer. Fewer, denser features; occasionally over-merges.
+
+**4. Vectorisation - from tokens to a document-term matrix.**
+- *Bag-of-Words (BoW)* - one column per vocabulary term; the entry is the **count** of that term in
+  the document. Order is thrown away.
+- *TF-IDF* - the same matrix, but each count is reweighted by *term frequency x inverse document
+  frequency*: terms that appear in almost every review (weak signal) are down-weighted, rare
+  informative terms are boosted.
+- *n-grams* - also index short word sequences. Unigrams `(1,1)` treat `not good` as `not` + `good`;
+  adding bigrams `(1,2)` gives the model the single feature `not good`, which is very useful for
+  sentiment.
+- *Vocabulary pruning* - `min_df` drops terms seen in fewer than *k* documents (kills typos),
+  `max_df` drops terms seen in more than a fraction of documents (kills corpus-specific stop
+  words), `max_features` caps the vocabulary at the most frequent *N* terms.
+
+The matrix is huge but almost all zeros, so it is stored **sparse**.
+""")
+
+md(r"""
+### 2a. Cleaning, tokenisation and the vectorizer factory
+
+`clean_text` and `tokenize` are the actual functions the vectorizer uses (as its `preprocessor`
+and `tokenizer`), so the step-by-step demo below and the full pipeline share exactly one code
+path. `build_vectorizer(...)` is the single knob-box that Part 6a's grid search will sweep.
+""")
+code(r"""
+from functools import lru_cache
+from nltk.stem import PorterStemmer
+
+_HTML_RE = re.compile(r"<[^>]+>")
+_URL_RE = re.compile(r"https?://\S+|www\.\S+")
+_KEEP_RE = re.compile(r"[^a-z\s]+")       # after lower-casing, keep only letters and spaces
+_TOKEN_RE = re.compile(r"[a-z]{2,}")       # tokens = runs of >= 2 letters
+_stem = lru_cache(maxsize=300_000)(PorterStemmer().stem)
+
+
+def clean_text(s):
+    # raw review -> normalised string (lower-case, no HTML / URLs / digits / punctuation)
+    s = s.lower()
+    s = _HTML_RE.sub(" ", s)
+    s = _URL_RE.sub(" ", s)
+    s = _KEEP_RE.sub(" ", s)
+    return s
+
+
+def tokenize(s, use_stemming=False, remove_stopwords=False):
+    # normalised string -> list of tokens, with optional stop-word removal then stemming
+    toks = _TOKEN_RE.findall(s)
+    if remove_stopwords:
+        toks = [t for t in toks if t not in ENGLISH_STOP_WORDS]
+    if use_stemming:
+        toks = [_stem(t) for t in toks]
+    return toks
+
+
+def build_vectorizer(kind="tfidf", ngram_range=(1, 1), use_stemming=False,
+                     remove_stopwords=False, min_df=5, max_df=0.9,
+                     max_features=50_000, binary=False):
+    # Return a configured (unfitted) CountVectorizer / TfidfVectorizer.
+    # kind: "bow" (counts) or "tfidf". binary=True + "bow" pairs with Bernoulli NB.
+    shared = dict(
+        preprocessor=clean_text,
+        tokenizer=lambda s: tokenize(s, use_stemming, remove_stopwords),
+        token_pattern=None,
+        ngram_range=ngram_range,
+        min_df=min_df,
+        max_df=max_df,
+        max_features=max_features,
+    )
+    if kind == "bow":
+        return CountVectorizer(binary=binary, **shared)
+    if kind == "tfidf":
+        return TfidfVectorizer(**shared)
+    raise ValueError("kind must be 'bow' or 'tfidf'")
+
+
+print("stemmer check:", [_stem(w) for w in ["amazing", "amazed", "amazingly", "movies", "acting"]])
+print("clean_text on a snippet:", repr(clean_text("It's <br />GREAT!! visit http://x.com 10/10")))
+""")
+
+md(r"""
+### 2b. The pipeline step-by-step on real examples
+
+Three reviews - a positive and a negative one from **train**, and one from **test** - taken through
+every text stage:
+""")
+code(r"""
+demo = pd.concat([
+    df_train[df_train.label == 1].iloc[[0]].assign(split="train"),
+    df_train[df_train.label == 0].iloc[[0]].assign(split="train"),
+    df_test.iloc[[1]].assign(split="test"),
+], ignore_index=True)
+
+stages = []
+for _, r in demo.iterrows():
+    cleaned = clean_text(r["review"])
+    toks = tokenize(cleaned)
+    no_stop = tokenize(cleaned, remove_stopwords=True)
+    stemmed = tokenize(cleaned, use_stemming=True, remove_stopwords=True)
+    stages.append({
+        "split": r["split"],
+        "label": int(r["label"]),
+        "1_raw (first 140 chars)": r["review"][:140] + " ...",
+        "2_cleaned (first 140)": cleaned[:140] + " ...",
+        "3_tokens (n)": len(toks),
+        "4_tokens (first 16)": " ".join(toks[:16]),
+        "5_minus_stopwords (first 16)": " ".join(no_stop[:16]),
+        "6_stemmed (first 16)": " ".join(stemmed[:16]),
+    })
+pd.set_option("display.max_colwidth", 160)
+pd.DataFrame(stages).T
+""")
+code(r"""
+# From tokens to numbers. (a) raw Bag-of-Words counts on just these 3 reviews -- the mechanism,
+# but the largest counts are inevitably function words:
+bow_demo = build_vectorizer(kind="bow", ngram_range=(1, 1), min_df=1, max_df=1.0, max_features=None)
+Bd = bow_demo.fit_transform(demo["review"])
+vd = np.array(bow_demo.get_feature_names_out())
+for i in range(len(demo)):
+    row = Bd[i].toarray().ravel(); nz = row.nonzero()[0]
+    order = nz[np.argsort(-row[nz])][:10]
+    print("doc %d (%s,label=%d): %d unique tokens; highest counts: %s"
+          % (i, demo["split"][i], demo["label"][i], len(nz),
+             ", ".join("%s=%d" % (vd[j], row[j]) for j in order)))
+""")
+code(r"""
+# (b) the same 3 reviews as TF-IDF over unigrams+bigrams, with the IDF weights and vocabulary
+# learned from the FULL training set (min_df=5) -- now the sentiment-bearing terms rise to the top.
+base_vec = build_vectorizer(kind="tfidf", ngram_range=(1, 2), min_df=5, max_features=50_000)
+base_vec.fit(df_train["review"])
+Td = base_vec.transform(demo["review"])
+vt = base_vec.get_feature_names_out()
+for i in range(len(demo)):
+    row = Td[i].toarray().ravel(); nz = row.nonzero()[0]
+    order = nz[np.argsort(-row[nz])][:12]
+    print("doc %d (%s,label=%d): %d non-zero features; highest TF-IDF: %s"
+          % (i, demo["split"][i], demo["label"][i], len(nz),
+             ", ".join("%s=%.2f" % (vt[j], row[j]) for j in order)))
+""")
+
+md(r"""
+### 2c. Baseline feature matrix
+
+Using that same fitted vectorizer - **TF-IDF, unigrams+bigrams, `min_df=5`, `max_features=50000`** -
+we transform the whole train and test sets. The vectorizer was fit on **train only**; the test set
+is only ever *transformed*. Part 6a searches for a better configuration; this establishes the
+shapes and gives Part 3 real data to run on.
+""")
+code(r"""
+t0 = time.time()
+Xtr = base_vec.transform(df_train["review"])
+Xte = base_vec.transform(df_test["review"])
+ytr = df_train["label"].to_numpy()
+yte = df_test["label"].to_numpy()
+
+density = Xtr.nnz / (Xtr.shape[0] * Xtr.shape[1])
+print("baseline TF-IDF, (1,2)-grams, min_df=5, max_features=50000")
+print("  X_train: %s     X_test: %s     vocab: %d" % (Xtr.shape, Xte.shape, len(base_vec.vocabulary_)))
+print("  matrix density: %.4f%%   transformed in %.1fs" % (100 * density, time.time() - t0))
+""")
+
+# ==========================================================================================
 # 3. Part 3 - Naive Bayes from scratch
 # ==========================================================================================
 md(r"""
@@ -434,7 +618,14 @@ for _a in (0.01, 0.5, 1.0, 2.0):
         _max_diff = max(_max_diff, np.abs(_mb.predict_log_proba(_Xchk) - _sb.predict_log_proba(_Xchk)).max())
         assert (_mb.predict(_Xchk) == _sb.predict(_Xchk)).all()
 
-print("multinomial + bernoulli match scikit-learn; max |log-prob diff| = %.2e" % _max_diff)
+print("synthetic data: multinomial + bernoulli match scikit-learn; max |log-prob diff| = %.2e" % _max_diff)
+
+# and on the real baseline IMDB features from Part 2
+_ours = NaiveBayesTextClassifier(alpha=0.1).fit(Xtr, ytr)
+_ref = SklearnMultinomialNB(alpha=0.1).fit(Xtr, ytr)
+assert (_ours.predict(Xte) == _ref.predict(Xte)).all()
+print("real IMDB features: predictions identical to scikit-learn on all %d test reviews" % Xte.shape[0])
+print("                    our from-scratch NB test macro-F1 = %.4f" % score(yte, _ours.predict(Xte)))
 """)
 
 
