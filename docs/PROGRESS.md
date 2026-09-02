@@ -6,28 +6,33 @@ Living checklist. Update at the end of every work session; keep the "current sta
 ## Current status
 
 - **Milestone 1 — repo scaffold + docs: DONE.**
-- **Dataset chosen:** IMDB 50K Movie Reviews (`atulanandjha/imdb-50k-movie-reviews-test-your-bert`).
-- **Milestone 2 — Part 1: IN PROGRESS.**
-  - `.venv` built with the full stack (`requirements.txt`).
-  - `tools/build_notebook.py` written — Part 1 (title/students, AI-prompts, problem+dataset
-    description, setup, `load_imdb()`, `.head()` of each, EDA/class-balance) + quality-index
-    section with `score()`.
-  - `notebook.ipynb` generated, code cells parse, imports + `score()` smoke-tested in the venv.
-  - **Blocked on:** Kaggle token (`~/.kaggle/kaggle.json`) to download the data and execute.
-- **Next action:** with the token in place — execute the notebook, confirm 25k/25k balanced
-  split and `imdb_master.csv` schema (`Unnamed: 0,type,review,label,file`, latin-1), then extend
-  the builder with Part 2 (feature engineering).
+- **Dataset:** IMDB 50K Movie Reviews (`atulanandjha/imdb-50k-movie-reviews-test-your-bert`),
+  **dataset version 2** — ships `train.csv` + `test.csv` (25k each, cols `text`/`sentiment`,
+  balanced, labels on both). No token needed: `kagglehub` anonymous download works (behind the
+  corporate TLS proxy, via `truststore.inject_into_ssl()` in the setup cell).
+- **Milestone 2 — Part 1: DONE.** `notebook.ipynb` executes end-to-end with outputs committed.
+  - Part 1: title/students, AI-prompts cell, problem+dataset paragraph, setup, `load_imdb()`
+    (loads the given split, renames to `review`/`label`, maps pos/neg→1/0, drops 96 within-train
+    exact-duplicate reviews → train 24904 / test 25000), `.head()` of each, EDA (class balance
+    plot, 123-row train/test text overlap noted, review-length stats).
+  - Quality-index section: `score()` = macro-F1.
+- **Milestone 3 (early) — Part 3: DONE.** `NaiveBayesTextClassifier` (Multinomial + Bernoulli,
+  log-space, sparse-aware; hyper-params `alpha`, `fit_prior`, `model_type`) + a self-contained
+  parity check vs scikit-learn (`max |log-prob diff| ≈ 1e-13`).
+- **Next action:** extend the builder with **Part 2 — feature engineering** (clean/tokenize
+  functions, BoW/TF-IDF vectorizer factory, n-grams/stopwords/stemming, 2–3-example demo on real
+  train & test rows). Then Part 6a grid search, then Parts 4 & 5. Insert Part 2 *before* Part 3
+  in the builder's cell order.
 
 ## Milestones
 
 - [x] 1. Repo scaffold: `CLAUDE.md`, `README.md`, `requirements.txt`, `.gitignore`, `docs/`.
-- [~] 2. Part 1 — data load (train/test via `imdb_master.csv` `type` column), `.head()` of each,
-      one-paragraph description, class-balance chart, student-details + AI-prompts cells.
-      *(written in the builder; awaiting Kaggle token to execute)*
+- [x] 2. Part 1 — data load (dataset's own `train.csv`/`test.csv`), `.head()` of each,
+      one-paragraph description, class-balance chart, student-details + AI-prompts cells. Executed.
+- [x] 4. Part 3 — `NaiveBayesTextClassifier` from scratch (Multinomial + Bernoulli) + parity
+      check vs scikit-learn. Executed, matches to ~1e-13.
 - [ ] 3. Part 2 — feature engineering (clean/tokenize, vectorizer factory) + 2–3-example demo
-      on train and test.
-- [ ] 4. Part 3 — `NaiveBayesTextClassifier` from scratch (Multinomial + Bernoulli) + parity
-      check vs `sklearn.MultinomialNB`.
+      on train and test. *(insert before Part 3 in builder order)*
 - [ ] 5. Part 6a — grid-search + 5-fold CV loop, `results_df` of all permutations, best
       permutation shown separately.
 - [ ] 6. Part 4 + Part 5 — retrain winning config on full trainset; evaluate on test set;

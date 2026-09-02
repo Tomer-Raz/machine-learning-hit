@@ -112,6 +112,15 @@ import warnings
 from pathlib import Path
 from itertools import product
 
+# Corporate networks often run a TLS-intercepting proxy that Python's bundled CA list
+# does not trust. truststore makes Python use the OS trust store instead. On Colab / a
+# normal network this is a harmless no-op.
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except Exception:
+    pass
+
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
@@ -131,6 +140,7 @@ np.random.seed(RANDOM_STATE)
 pd.set_option("display.max_colwidth", 200)
 sns.set_theme(style="whitegrid")
 warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", message=".*IProgress not found.*")  # tqdm in a plain kernel
 
 print("numpy", np.__version__, "| pandas", pd.__version__)
 """)
@@ -138,44 +148,53 @@ print("numpy", np.__version__, "| pandas", pd.__version__)
 md(r"""
 ### 1d. Load the train and test sets
 
-The Kaggle dataset provides a single file, `imdb_master.csv`, with a `type` column marking each row
-as `train` or `test` (this *is* the official Stanford split) and a `label` column with values
-`pos`, `neg` or `unsup`. We drop the `unsup` (unlabelled) rows and split on `type` - **we never
-build our own split**. Labels are mapped `neg -> 0`, `pos -> 1`.
+The Kaggle dataset ships the **official Stanford split** as two files, `train.csv` and `test.csv`
+(25,000 rows each), with columns `text` and `sentiment` (`pos` / `neg`). We load them as-is - **we
+never build or re-shuffle the split** - rename to `review` / `label`, and map `neg -> 0`,
+`pos -> 1`. The only cleaning here is dropping exact duplicate reviews *within* the training set
+(96 of them); the test set is left completely untouched.
 """)
 code(r"""
 def load_imdb():
-    # Return (df_train, df_test), each with columns ['review', 'label'] (label 0/1).
-    # Tries kagglehub first (needs ~/.kaggle/kaggle.json), then a local data/imdb_master.csv.
-    paths = []
+    # Return (df_train, df_test), each with columns ['review', 'label'] (label 0 = neg, 1 = pos).
+    # Downloads from Kaggle via kagglehub (anonymous access works for this public dataset),
+    # with a data/ folder fallback. The dataset's own train.csv / test.csv are the fixed split.
+    root = None
     try:
         import kagglehub
         root = Path(kagglehub.dataset_download("atulanandjha/imdb-50k-movie-reviews-test-your-bert"))
-        paths += sorted(root.rglob("imdb_master.csv"))
     except Exception as e:
-        print("kagglehub unavailable (%r); trying data/imdb_master.csv" % (e,))
-    paths += [Path("data/imdb_master.csv")]
+        print("kagglehub download failed (%r); looking in data/" % (e,))
 
-    csv = next((p for p in paths if p and p.exists()), None)
-    if csv is None:
-        raise FileNotFoundError(
-            "imdb_master.csv not found - add a Kaggle token to ~/.kaggle/kaggle.json "
-            "or place the file in data/."
-        )
-    print("loading", csv)
+    def _find(name):
+        for base in [p for p in (root, Path("data")) if p is not None]:
+            hits = sorted(base.rglob(name))
+            if hits:
+                return hits[0]
+        return None
 
-    # imdb_master.csv is latin-1 encoded and carries a leading unnamed index column
-    df = pd.read_csv(csv, encoding="latin-1")
-    df.columns = [c.strip().lower() for c in df.columns]
-    df = df.rename(columns={"sentimenttext": "review", "text": "review", "sentiment": "label"})
-    df = df[["type", "review", "label"]].dropna(subset=["review", "label"])
-    df["review"] = df["review"].astype(str)
+    def _read(path):
+        try:
+            df = pd.read_csv(path)
+        except UnicodeDecodeError:
+            df = pd.read_csv(path, encoding="latin-1")
+        df.columns = [c.strip().lower() for c in df.columns]
+        df = df.rename(columns={"sentimenttext": "review", "text": "review",
+                                "sentiment": "label", "review_text": "review"})
+        df = df[["review", "label"]].dropna()
+        df["review"] = df["review"].astype(str)
+        df["label"] = df["label"].map({"pos": 1, "neg": 0, "positive": 1, "negative": 0,
+                                       1: 1, 0: 0, "1": 1, "0": 0})
+        return df.dropna(subset=["label"]).astype({"label": int}).reset_index(drop=True)
 
-    df = df[df["label"].isin(["pos", "neg"])].copy()
-    df["label"] = (df["label"] == "pos").astype(int)
+    tr_path, te_path = _find("train.csv"), _find("test.csv")
+    if tr_path is None or te_path is None:
+        raise FileNotFoundError("train.csv / test.csv not found via kagglehub or data/")
+    print("train file:", tr_path)
+    print("test  file:", te_path)
 
-    tr = df[df["type"] == "train"].drop(columns="type").reset_index(drop=True)
-    te = df[df["type"] == "test"].drop(columns="type").reset_index(drop=True)
+    tr = _read(tr_path).drop_duplicates(subset="review").reset_index(drop=True)
+    te = _read(te_path)
     return tr, te
 
 
@@ -192,8 +211,9 @@ code(r"""df_test.head()""")
 md(r"""
 ### 1e. A quick look at the data
 
-Both splits should be balanced 50/50. We also glance at review length, which motivates a few
-feature-engineering choices in Part 2 (HTML `<br />` tags to strip, very long reviews, and so on).
+Both splits should be balanced 50/50. We also check for obvious data-quality issues and glance at
+review length, which motivates a few feature-engineering choices in Part 2 (HTML `<br />` tags to
+strip, very long reviews, and so on).
 """)
 code(r"""
 for name, d in [("train", df_train), ("test", df_test)]:
@@ -201,6 +221,10 @@ for name, d in [("train", df_train), ("test", df_test)]:
     print("%-5s n=%6d  neg(0)=%6d  pos(1)=%6d  nulls=%d  empty=%d" % (
         name, len(d), c.get(0, 0), c.get(1, 0),
         d["review"].isna().sum(), (d["review"].str.strip() == "").sum()))
+
+overlap = len(set(df_train["review"]) & set(df_test["review"]))
+print("\nexact review text shared between train and test: %d (%.2f%% of test) - left as-is; "
+      "too small to matter and we must not alter the given split" % (overlap, 100 * overlap / len(df_test)))
 
 fig, ax = plt.subplots(1, 2, figsize=(11, 3.4))
 for a, (name, d) in zip(ax, [("train", df_train), ("test", df_test)]):
@@ -248,6 +272,171 @@ def score(y_true, y_pred):
 
 print("score() smoke test:", round(score([0, 0, 1, 1, 1], [0, 1, 1, 1, 0]), 4))
 """)
+
+# ==========================================================================================
+# 3. Part 3 - Naive Bayes from scratch
+# ==========================================================================================
+md(r"""
+---
+## Part 3 - Naive Bayes, implemented from scratch
+
+### 3a. The idea
+
+Naive Bayes is a probabilistic classifier built on **Bayes' rule**. To label a document *d* we pick
+the class *c* that maximises the posterior probability *P(c | d)*. Bayes' rule rewrites that as
+
+$$P(c \mid d) \;\propto\; P(c)\, P(d \mid c)$$
+
+- **$P(c)$ - the prior:** how frequent class *c* is overall.
+- **$P(d \mid c)$ - the likelihood:** how typical document *d* looks for class *c*.
+
+The **"naive"** part is the assumption that the features (words) are **conditionally independent
+given the class**. That is clearly false for real language, but it makes the parameters trivial to
+estimate from counts and, empirically, the classifier is strong for text.
+
+**Multinomial model.** A document is a bag of word counts; word *i* occurs $x_i$ times over a
+vocabulary of size $V$:
+
+$$P(d \mid c) \;\propto\; \prod_{i=1}^{V} P(w_i \mid c)^{\,x_i}$$
+
+Each $P(w_i \mid c)$ is estimated by counting, with **Laplace / Lidstone smoothing** of strength
+$\alpha$ so that an unseen word does not zero out the whole product:
+
+$$P(w_i \mid c) \;=\; \frac{N_{ci} + \alpha}{N_c + \alpha V},
+\qquad N_{ci} = \text{count of word }i\text{ in class }c,\quad N_c = \sum_i N_{ci}.$$
+
+**Work in log space.** Multiplying thousands of small probabilities underflows to 0, so we take
+logs and *add*:
+
+$$\log P(c \mid d) \;=\; \log P(c) \;+\; \sum_i x_i \, \log P(w_i \mid c) \;+\; \text{const},$$
+
+and predict $\arg\max_c$. Vectorised over a document-term matrix $X$ this is one matrix product:
+`jll = X @ feature_log_prob_.T + class_log_prior_`.
+
+**Bernoulli model (a variant we also try).** Here a document is a set of binary present/absent
+flags $b_i$; counts are ignored and, importantly, **absent** words contribute too:
+
+$$\log P(c \mid d) = \log P(c) + \sum_i \big[\, b_i \log p_{ci} + (1 - b_i)\log(1 - p_{ci}) \,\big],
+\qquad p_{ci} = \frac{\mathrm{df}_{ci} + \alpha}{N_c + 2\alpha},$$
+
+where $\mathrm{df}_{ci}$ is the number of class-*c* documents that contain word *i*.
+
+**Hyper-parameters exposed** (as taught in class): `alpha` (smoothing strength), `fit_prior`
+(estimate $P(c)$ from data vs. assume uniform), and `model_type` (`"multinomial"` or
+`"bernoulli"`).
+""")
+
+md(r"""
+### 3b. Implementation
+
+A scikit-learn-style estimator: `fit(X, y)` then `predict(X)` / `predict_proba(X)`, where `X` is a
+document-term matrix (dense or SciPy sparse, as produced by the vectorizers in Part 2). Everything
+is done with vectorised NumPy in log space.
+""")
+code(r"""
+def _logsumexp(a, axis=None, keepdims=False):
+    a_max = np.max(a, axis=axis, keepdims=True)
+    out = np.log(np.sum(np.exp(a - a_max), axis=axis, keepdims=True)) + a_max
+    return out if keepdims else np.squeeze(out, axis=axis)
+
+
+class NaiveBayesTextClassifier:
+    # Multinomial / Bernoulli Naive Bayes for text, implemented from scratch.
+    #   alpha      : additive (Laplace/Lidstone) smoothing strength
+    #   fit_prior  : learn P(c) from data if True, else uniform prior
+    #   model_type : "multinomial" (term counts) or "bernoulli" (binary presence + absence)
+
+    def __init__(self, alpha=1.0, fit_prior=True, model_type="multinomial"):
+        self.alpha = float(alpha)
+        self.fit_prior = bool(fit_prior)
+        self.model_type = model_type
+
+    def _indicator(self, y):
+        # (n_classes, n_samples) 0/1 matrix; row k selects the samples of classes_[k]
+        y = np.asarray(y)
+        self.classes_ = np.unique(y)
+        return np.stack([(y == c).astype(np.float64) for c in self.classes_])
+
+    def fit(self, X, y):
+        if self.model_type not in ("multinomial", "bernoulli"):
+            raise ValueError("model_type must be 'multinomial' or 'bernoulli'")
+        Xc = X.tocsr().astype(np.float64) if sp.issparse(X) else np.asarray(X, dtype=np.float64)
+        if self.model_type == "bernoulli":
+            Xc = (Xc > 0).astype(np.float64)
+
+        Y = self._indicator(y)                       # (K, n)
+        self.class_count_ = Y.sum(axis=1)            # (K,)  docs per class
+        self.feature_count_ = np.asarray(Y @ Xc)     # (K, V)  counts (mult) / doc-freqs (bern)
+        n_classes, self.n_features_in_ = self.feature_count_.shape
+
+        if self.fit_prior:
+            self.class_log_prior_ = np.log(self.class_count_ / self.class_count_.sum())
+        else:
+            self.class_log_prior_ = np.full(n_classes, -np.log(n_classes))
+
+        if self.model_type == "multinomial":
+            smoothed_fc = self.feature_count_ + self.alpha
+            smoothed_cc = smoothed_fc.sum(axis=1, keepdims=True)          # (K, 1)
+            self.feature_log_prob_ = np.log(smoothed_fc) - np.log(smoothed_cc)
+        else:
+            prob = (self.feature_count_ + self.alpha) / (self.class_count_[:, None] + 2 * self.alpha)
+            self.feature_log_prob_ = np.log(prob)         # log P(term present | c)
+            self._neg_log_prob = np.log(1.0 - prob)       # log P(term absent  | c)
+        return self
+
+    def _joint_log_likelihood(self, X):
+        # unnormalised log P(c, d) for every doc/class -> shape (n_docs, n_classes)
+        Xc = X.tocsr().astype(np.float64) if sp.issparse(X) else np.asarray(X, dtype=np.float64)
+        if self.model_type == "bernoulli":
+            Xc = (Xc > 0).astype(np.float64)
+            delta = self.feature_log_prob_ - self._neg_log_prob
+            jll = Xc @ delta.T + self.class_log_prior_ + self._neg_log_prob.sum(axis=1)
+        else:
+            jll = Xc @ self.feature_log_prob_.T + self.class_log_prior_
+        return np.asarray(jll)
+
+    def predict(self, X):
+        return self.classes_[np.argmax(self._joint_log_likelihood(X), axis=1)]
+
+    def predict_log_proba(self, X):
+        jll = self._joint_log_likelihood(X)
+        return jll - _logsumexp(jll, axis=1, keepdims=True)
+
+    def predict_proba(self, X):
+        return np.exp(self.predict_log_proba(X))
+""")
+
+md(r"""
+### 3c. Correctness check
+
+Same maths as scikit-learn's `MultinomialNB` / `BernoulliNB`, so our estimates and predictions
+should match theirs to floating-point tolerance. We check on synthetic count data and on a small
+text corpus, across several `alpha` and `fit_prior` settings. (scikit-learn is used **only** as a
+reference here - never as the model.)
+""")
+code(r"""
+from sklearn.naive_bayes import BernoulliNB as _SkBernoulliNB
+
+_rng = np.random.default_rng(0)
+_Xchk = sp.csr_matrix(_rng.integers(0, 5, size=(300, 25)).astype(float))
+_ychk = _rng.integers(0, 3, size=300)
+
+_max_diff = 0.0
+for _a in (0.01, 0.5, 1.0, 2.0):
+    for _fp in (True, False):
+        _m = NaiveBayesTextClassifier(alpha=_a, fit_prior=_fp, model_type="multinomial").fit(_Xchk, _ychk)
+        _s = SklearnMultinomialNB(alpha=_a, fit_prior=_fp).fit(_Xchk, _ychk)
+        _max_diff = max(_max_diff, np.abs(_m.predict_log_proba(_Xchk) - _s.predict_log_proba(_Xchk)).max())
+        assert (_m.predict(_Xchk) == _s.predict(_Xchk)).all()
+
+        _mb = NaiveBayesTextClassifier(alpha=_a, fit_prior=_fp, model_type="bernoulli").fit(_Xchk, _ychk)
+        _sb = _SkBernoulliNB(alpha=_a, fit_prior=_fp, binarize=0.0).fit(_Xchk, _ychk)
+        _max_diff = max(_max_diff, np.abs(_mb.predict_log_proba(_Xchk) - _sb.predict_log_proba(_Xchk)).max())
+        assert (_mb.predict(_Xchk) == _sb.predict(_Xchk)).all()
+
+print("multinomial + bernoulli match scikit-learn; max |log-prob diff| = %.2e" % _max_diff)
+""")
+
 
 # ==========================================================================================
 # assemble

@@ -20,5 +20,8 @@ seaborn
 jupyterlab
 ipykernel
 
-# Data access (Kaggle) — used by the data-download step once the dataset is chosen
+# Data access (Kaggle) — anonymous download works for this public dataset
 kagglehub
+
+# Lets Python use the OS trust store (needed behind a corporate TLS proxy); no-op elsewhere
+truststore

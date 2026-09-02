@@ -17,12 +17,17 @@ notebook with committed outputs + a ~5-minute explainer video.
 
 ## Current status / next step
 
-> **Status:** milestone 2 in progress. `.venv` built (numpy/pandas/sklearn/nltk/jupyter — see
-> `requirements.txt`). Notebook generator `tools/build_notebook.py` written with **Part 1 +
-> quality-index section**; `notebook.ipynb` generated but **not yet executed** (needs the Kaggle
-> token at `~/.kaggle/kaggle.json` to download the data).
-> **Next:** once the token is in place — run `load_imdb()`, verify the 25k/25k split, execute the
-> notebook, then extend the builder with Part 2 (feature engineering).
+> **Status:** `notebook.ipynb` executes end-to-end with outputs committed. **Done:** Part 1
+> (data load from the dataset's own `train.csv`/`test.csv`, `.head()` of each, EDA), the
+> quality-index section (`score()` = macro-F1), and **Part 3** (`NaiveBayesTextClassifier`,
+> Multinomial + Bernoulli, parity-checked vs scikit-learn).
+> **Next:** add **Part 2 — feature engineering** to `tools/build_notebook.py` (insert its cells
+> *before* the Part 3 block), then Part 6a grid search, then Parts 4 & 5.
+>
+> Env notes: `.venv` has the full stack; `kagglehub` anonymous download works (no token);
+> `truststore.inject_into_ssl()` in the setup cell handles the corporate TLS proxy.
+> Build+run: `.venv/bin/python tools/build_notebook.py && .venv/bin/jupyter nbconvert --to
+> notebook --execute --inplace --ExecutePreprocessor.timeout=2400 notebook.ipynb`
 
 Update this block and `docs/PROGRESS.md` at the end of every work session.
 
@@ -73,9 +78,11 @@ Update this block and `docs/PROGRESS.md` at the end of every work session.
 ## Hard requirements easy to miss
 
 - Load the dataset's **existing train and test split**; show `.head()` of **each**. Do **not**
-  re-split, and do **not** merge-then-resplit. For this dataset: load `imdb_master.csv`, drop
-  `label == 'unsup'` rows, split into train/test **by the `type` column** (that IS the official
-  Stanford split) → 25k train + 25k test, both labeled.
+  re-split, and do **not** merge-then-resplit. For this dataset (version 2): load the shipped
+  `train.csv` and `test.csv` (25k rows each, cols `text`/`sentiment`), rename to `review`/`label`,
+  map `pos→1`/`neg→0`. Only within-train cleaning is allowed (we drop 96 exact-duplicate reviews);
+  the test set is left untouched. ~123 review texts appear in both splits — noted as a caveat, not
+  altered.
 - The **test set has labels** here (pos/neg) — Part 5 scores it directly.
 - **5-fold cross-validation runs only inside the trainset.** The test set is touched once, at the end.
 - Feature engineering must be shown **step-by-step on 2–3 train + 2–3 test examples**
