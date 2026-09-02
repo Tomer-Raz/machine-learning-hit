@@ -1,12 +1,16 @@
 # data/
 
-Train and test data for the assignment.
+IMDB 50K Movie Reviews — Kaggle `atulanandjha/imdb-50k-movie-reviews-test-your-bert`
+(Stanford `aclImdb`).
 
-- The dataset is not yet chosen. Once it is, this folder holds either:
-  - the small processed `train.csv` / `test.csv` (committed, so the notebook runs anywhere), or
-  - a `download_data.py` / notebook cell that fetches it from Kaggle (with `data/raw/` gitignored).
-- The brief requires a **fixed** train/test split — do not re-split. If the source is a single
-  file, the notebook makes one stratified 80/20 split with `random_state=42` and writes the two
-  files here.
+- **Not committed.** The notebook fetches it (via `kagglehub`, or a manual download of
+  `imdb_master.csv` dropped here).
+- `imdb_master.csv` columns: `type` (`train` / `test`), `review` (text), `label`
+  (`pos` / `neg` / `unsup`), plus an index and a file-path column.
+- Build train / test:
+  1. drop rows where `label == 'unsup'` (~50k unlabeled) → 25k train + 25k test,
+  2. split by the `type` column — **this is the dataset's own split; do not re-split**,
+  3. map `pos → 1`, `neg → 0`.
+- Optionally the notebook writes `data/train.csv` and `data/test.csv` here (gitignored).
 
 See `../docs/ASSIGNMENT.md` §5 for the constraints.

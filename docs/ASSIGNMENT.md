@@ -31,10 +31,13 @@ Assessment is **primarily on process**, not on model quality.
 | Decision | Choice |
 |---|---|
 | Assignment type | Text analysis (NLP) |
-| Learning type | Classification (expected binary) |
+| Learning type | Binary classification — positive vs negative movie-review sentiment |
 | Algorithm implemented from scratch | Naive Bayes — Multinomial + Bernoulli variant |
-| Dataset | TBD, from https://www.kaggle.com/datasets?tags=13204-NLP |
+| Dataset | **IMDB 50K Movie Reviews** — `atulanandjha/imdb-50k-movie-reviews-test-your-bert` (https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert). Stanford `aclImdb`; tagged `nlp` + `text`; ships pre-split **25k train / 25k test**, both labeled, balanced 50/50. |
+| Quality metric | F1 macro-average (see §3) |
 | Scope | Parts 1–5 in full + a light Part 6a. Skip 6b, 6c. |
+| Delivery | ~5-min video (no in-class presentation) |
+| Student details cell | `Tomer R.` + last-4 ID `5130` |
 
 ---
 
@@ -45,6 +48,10 @@ Assessment is **primarily on process**, not on model quality.
   (`f1_score(..., average="macro")`).
 - **Binary with one "central" (positive) class of interest** (e.g. spam vs ham) →
   F1 of the positive class only (`f1_score(..., pos_label=<positive>)`).
+
+**Our case → F1 macro-average.** IMDB sentiment is a balanced binary problem (50% pos / 50% neg)
+with no single class of interest, so the middle rule applies. Note in the notebook that on this
+balanced data F1-on-positive and accuracy come out near-identical.
 
 The same metric is used per-fold in cross-validation, to pick the best permutation, and on the
 final test set. Implement it once as a `score(y_true, y_pred)` helper.
@@ -74,14 +81,14 @@ Base target ≈ 100 pts (Parts 1–5) plus partial 6a.
 
 ## 5. Hard constraints
 
-- Load a **train set** and a **test set**; show `.head()` of **each**. Do **not** re-split.
-  Two acceptable structures:
-  1. The dataset ships a real train/test split with **labels on both** → use as-is.
-  2. Single-file dataset → do **one** stratified split at the very top
-     (`train_test_split(..., test_size=0.2, stratify=y, random_state=42)`), treat the halves as
-     the fixed trainset / testset, and never split again.
-- The **test set must contain labels** — Part 5 scores it. Competition-format `test.csv` files
-  without a target are unusable.
+- Load a **train set** and a **test set**; show `.head()` of **each**. Do **not** re-split, and
+  do **not** merge-then-resplit.
+  - **This dataset ships its own split.** Load `imdb_master.csv` (columns `type`, `review`,
+    `label`), drop `label == 'unsup'` rows (~50k unlabeled), then split into train/test **by the
+    `type` column** — that is the official Stanford split (25k train / 25k test, both labeled,
+    balanced). Optionally persist to `data/train.csv` + `data/test.csv` and load those.
+  - Map labels to binary: `pos → 1`, `neg → 0` (or keep strings — just be consistent).
+- The **test set has labels** here (`pos`/`neg`) — Part 5 scores it directly.
 - **5-fold cross-validation runs only inside the trainset.** The test set is touched once, at the end.
 - Feature engineering shown **step-by-step on 2–3 concrete train examples and 2–3 test examples**
   (raw → transformed), and again after the winning config is chosen (Parts 4 & 5).
@@ -195,14 +202,16 @@ class NaiveBayesTextClassifier:
 
 ---
 
-## 9. Open decisions (resolve in-session)
+## 9. Decisions — resolved & open
 
-1. **Dataset choice** — pick with the user against §5 criteria (first step of the next session).
-2. Split model — real pre-split-with-labels if available, else one fixed stratified 80/20 split.
-3. Class structure — binary + F1-on-positive-class by default; switch to F1-macro if multi-class.
-4. Feature-engineering demo — hand-roll a tiny tokenizer/counter for the 2–3-example demo
+Resolved: dataset (IMDB 50K, `atulanandjha/...`), split model (use the dataset's own `type`
+column), class structure (binary pos/neg), metric (F1-macro), delivery (video), student details
+(`Tomer R.` / `5130`).
+
+Still open / in-session:
+1. Feature-engineering demo — plan: hand-roll a tiny tokenizer/counter for the 2–3-example demo
    (fully printable), use sklearn vectorizers for the full runs.
-5. Include Bernoulli NB as a second variant in Part 3 + the grid — yes (cheap, strengthens both).
-6. Delivery — video vs in-class presentation — user decides later; doesn't change the notebook.
-7. Student-details cell — user supplies each member's first name + last initial + last 4 ID digits.
-8. `src/` + `tests/` mirror — optional; add only if iteration speed calls for it.
+2. Bernoulli NB as a second variant in Part 3 + the grid — yes (cheap, strengthens both).
+3. Grid size for 6a — start ~24–48 permutations; trim if the ~50k-row CV is slow.
+4. `src/` + `tests/` mirror — optional; add only if iteration speed calls for it.
+5. `kagglehub` download vs manual CSV drop into `data/` — decide when wiring Part 1.

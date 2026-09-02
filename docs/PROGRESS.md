@@ -6,15 +6,17 @@ Living checklist. Update at the end of every work session; keep the "current sta
 ## Current status
 
 - **Milestone 1 — repo scaffold + docs: DONE.**
-- Notebook not started. Dataset not chosen.
-- **Next action:** pick the Kaggle dataset with the user (criteria in `ASSIGNMENT.md` §5), then
-  build Part 1 of `notebook.ipynb`.
+- **Dataset chosen:** IMDB 50K Movie Reviews (`atulanandjha/imdb-50k-movie-reviews-test-your-bert`).
+- Notebook not started.
+- **Next action:** build Part 1 of `notebook.ipynb` — download data, load train/test from the
+  dataset's own `type` split, `.head()` of each, class-balance chart, student-details +
+  AI-prompts cells, one-paragraph problem description.
 
 ## Milestones
 
 - [x] 1. Repo scaffold: `CLAUDE.md`, `README.md`, `requirements.txt`, `.gitignore`, `docs/`.
-- [ ] 2. Dataset chosen + Part 1 (load train/test, `.head()` of each, one-paragraph description,
-      class-balance chart, student-details + AI-prompts cells).
+- [ ] 2. Part 1 — data load (train/test via `imdb_master.csv` `type` column), `.head()` of each,
+      one-paragraph description, class-balance chart, student-details + AI-prompts cells.
 - [ ] 3. Part 2 — feature engineering (clean/tokenize, vectorizer factory) + 2–3-example demo
       on train and test.
 - [ ] 4. Part 3 — `NaiveBayesTextClassifier` from scratch (Multinomial + Bernoulli) + parity
@@ -25,7 +27,7 @@ Living checklist. Update at the end of every work session; keep the "current sta
       first 5 predictions; confusion matrix + top-words plots.
 - [ ] 7. Final polish — conclusions cell, Excel-values appendix, README submission links,
       re-run notebook top-to-bottom with outputs saved.
-- [ ] 8. Record video (~5 min) or present in class.
+- [ ] 8. Record video (~5 min).
 
 ## Decisions log
 
@@ -34,9 +36,14 @@ Living checklist. Update at the end of every work session; keep the "current sta
 - 2026-09-02 — Repo: `Tomer-Raz/machine-learning-hit`, working copy at
   `machine_learning/machine-learning-hit/`. Commit identity `Tomer-Raz <tomer532010@gmail.com>`,
   no Claude attribution. `gh auth switch --user Tomer-Raz` before pushing.
+- 2026-09-02 — Considered TripAdvisor Hotel Reviews (20k, single file, would need our own
+  split). **Switched to IMDB 50K** (`atulanandjha/imdb-50k-movie-reviews-test-your-bert`)
+  because it ships a real pre-split 25k/25k with labels on both sides.
+- 2026-09-02 — Learning type: **binary** (pos/neg sentiment). Metric: **F1 macro-average**
+  (balanced binary, no central class). Delivery: **video**. Student cell: `Tomer R.` / `5130`.
 
 ## Open questions for the user
 
-- Which Kaggle dataset? (needs: English, text + label, small, test set with labels)
-- Group members' details for the student-details cell (first name + last initial + last 4 ID digits).
-- Delivery: record a video, or present in class?
+- (none blocking) — grid size, kagglehub-vs-manual download, and Bernoulli-in-grid are
+  implementation choices tracked in `ASSIGNMENT.md` §9.
+- Video: still to be recorded once the notebook is done.

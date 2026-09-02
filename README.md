@@ -8,12 +8,17 @@ from scratch**.
 
 ## Problem
 
-*(One-paragraph description of the learning problem and dataset goes here once the dataset is
-chosen — mirrors the notebook's intro cell.)*
+Binary **sentiment classification** of movie reviews: given the text of an IMDB review, predict
+whether it is **positive** or **negative**. Data is the Stanford Large Movie Review Dataset
+(`aclImdb`) via Kaggle — 50,000 highly polar reviews, shipped **pre-split** into 25,000 train and
+25,000 test, balanced 50/50, with labels on both sides. We build the feature pipeline
+(cleaning → tokenization → Bag-of-Words / TF-IDF) and a hand-implemented Naive Bayes classifier,
+tune it with 5-fold cross-validated grid search on the training set, and report quality on the
+untouched test set.
 
-- **Task:** text classification
+- **Task:** binary text classification (positive vs negative)
 - **Algorithm:** Naive Bayes (Multinomial, with a Bernoulli variant), hand-implemented
-- **Quality metric:** F1 on the positive class (binary) / F1 macro-average (multi-class)
+- **Quality metric:** F1 macro-average
 
 ## What's in here
 
@@ -23,7 +28,7 @@ chosen — mirrors the notebook's intro cell.)*
 | `ml.md` | Original assignment brief |
 | `docs/ASSIGNMENT.md` | Decoded spec, point map, notebook skeleton, algorithm & CV specs |
 | `docs/PROGRESS.md` | Progress checklist |
-| `data/` | Train / test data (or a script to fetch it) |
+| `data/` | IMDB data (fetched by the notebook; not committed) |
 
 ## Running it
 
@@ -35,10 +40,18 @@ jupyter lab notebook.ipynb
 
 Or open `notebook.ipynb` in [Google Colab](https://colab.research.google.com/).
 
+## Dataset & credit
+
+IMDB 50K Movie Reviews — https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert
+(License: GNU LGPL 3.0). Please cite:
+
+> Maas, A. L., Daly, R. E., Pham, P. T., Huang, D., Ng, A. Y., & Potts, C. (2011).
+> *Learning Word Vectors for Sentiment Analysis.* ACL 2011.
+
 ## Submission links
 
 | Item | Link |
 |---|---|
 | Repository | https://github.com/Tomer-Raz/machine-learning-hit |
-| Kaggle dataset | _TBD_ |
+| Kaggle dataset | https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert |
 | Video | _TBD_ |

@@ -13,11 +13,14 @@ env/
 # NLTK data downloaded locally
 nltk_data/
 
-# Data — large/raw archives are not committed; small processed train/test CSVs may be (see data/README.md)
+# Data — fetched by the notebook, not committed (see data/README.md)
 data/raw/
+data/*.csv
 data/*.zip
 data/*.tar.gz
+data/aclImdb/
 *.parquet
+!data/README.md
 
 # Kaggle credentials
 kaggle.json
