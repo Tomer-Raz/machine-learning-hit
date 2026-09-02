@@ -1,0 +1,20 @@
+# Core
+numpy
+pandas
+scipy
+scikit-learn        # vectorizers, StratifiedKFold, metrics, and a one-off parity check ONLY
+                    # (Naive Bayes itself is implemented from scratch)
+
+# NLP preprocessing
+nltk                # stopwords, Porter stemmer, WordNet lemmatizer
+
+# Visualisation
+matplotlib
+seaborn
+
+# Notebook
+jupyterlab
+ipykernel
+
+# Data access (Kaggle) — used by the data-download step once the dataset is chosen
+kagglehub

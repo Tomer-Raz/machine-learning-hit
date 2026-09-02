@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# NLTK data downloaded locally
+nltk_data/
+
+# Data — large/raw archives are not committed; small processed train/test CSVs may be (see data/README.md)
+data/raw/
+data/*.zip
+data/*.tar.gz
+*.parquet
+
+# Kaggle credentials
+kaggle.json
+.kaggle/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
