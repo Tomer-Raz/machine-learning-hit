@@ -4,14 +4,59 @@ Recording notes for the assignment video. The brief asks for ~5 minutes, viewabl
 download (unlisted YouTube is fine), introducing the presenter at the start and walking through
 **every part** showing code + output + explanation, assuming the viewer does not know the material.
 
-**Setup before recording**
+## Before you record
 
-- Open `notebook.ipynb` with all outputs already visible — do **not** re-run anything on camera.
-- Zoom the browser/editor to ~150 % so code is readable in the recording.
+**Open the notebook** (everything is already installed — no setup needed):
+
+```bash
+cd ~/Desktop/work/machine_learning/machine-learning-hit
+source .venv/bin/activate
+jupyter lab notebook.ipynb
+```
+
+Stop the server afterwards with `Ctrl-C` twice in that terminal.
+
+**Do not re-run anything on camera.** The notebook already shows every output, which is exactly what
+the brief asks for ("results visible without re-running"). A full run takes about 7 minutes; your
+video is 5. If you want to show that it runs, run one instant cell — cell 15 (the `score()` smoke
+test) or cell 9 (`df_train.head()`) — and nothing more.
+
+> ### ⚠ Protect the committed notebook
+>
+> The submitted notebook has execution counts 1–25 in order, which is the evidence it ran cleanly in
+> one pass. Running cells interactively renumbers them, and **saving** puts that mess in your
+> submission. After any interactive poking:
+>
+> ```bash
+> git status                       # notebook.ipynb listed as modified?
+> git checkout -- notebook.ipynb   # if so, restore the good copy
+> ```
+>
+> Check this before recording and before pushing. Nothing is lost — git has the clean version.
+
+**Proving to yourself it still runs** (do this the day before, never during recording):
+
+```bash
+.venv/bin/python tools/build_notebook.py
+.venv/bin/jupyter nbconvert --to notebook --execute --inplace \
+    --ExecutePreprocessor.timeout=14400 notebook.ipynb
+```
+
+About 7 minutes, no internet required (the Kaggle data is cached). Two stretches look like it has
+frozen but have not: the grid search (~2.5 min) and the `min_df` sweep (~2.5 min).
+
+**Framing and delivery**
+
+- Zoom the browser to ~150 % (`Cmd +`); default-size code is unreadable in a compressed recording.
+- Collapse the JupyterLab sidebar for a cleaner frame.
+- Keep this script on a second screen or your phone — not on the screen you are recording.
+- Record 30 seconds as a test and watch it back: legible code, clean audio.
 - Cell indices below refer to the 55-cell notebook; the heading names are the reliable anchor if
   cells shift.
-- Total budget is tight. Read the code *out loud only where it matters* (the NB `fit`, the CV
-  loop); everywhere else, point at the output and explain what it means.
+- Time is tight. Read code aloud only where it matters (the NB `fit`, the CV loop); everywhere else
+  point at the output and say what it means.
+
+---
 
 ---
 
