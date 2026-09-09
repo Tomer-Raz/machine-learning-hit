@@ -1,5 +1,8 @@
 # Video script — ~5 minutes
 
+> **Hebrew version:** [`VIDEO_SCRIPT_HE.md`](VIDEO_SCRIPT_HE.md) — the same script in spoken Hebrew,
+> for recording in Hebrew.
+
 Recording notes for the assignment video. The brief asks for ~5 minutes, viewable without
 download (unlisted YouTube is fine), introducing the presenter at the start and walking through
 **every part** showing code + output + explanation, assuming the viewer does not know the material.
