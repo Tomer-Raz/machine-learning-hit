@@ -630,6 +630,348 @@ print("                    our from-scratch NB test macro-F1 = %.4f" % score(yte
 
 
 # ==========================================================================================
+# 6a. Part 6a - grid search + 5-fold cross-validation
+# ==========================================================================================
+md(r"""
+---
+## Part 6a - Experimenting with feature engineering and hyper-parameters
+
+We now search for the best pipeline by **5-fold cross-validation on the training set only**. The
+test set is not touched here at all.
+
+**k-fold cross-validation.** Split the training set into 5 equal, class-stratified parts. Five
+times, train on 4 parts and measure the quality index on the held-out part. The 5 held-out scores
+are averaged - this estimates how well a configuration generalises, using every training review
+for validation exactly once and without ever looking at the test set.
+
+**Grid search.** Try every combination in the Cartesian product of:
+
+| Axis | Values | Kind |
+|---|---|---|
+| vectorizer | Bag-of-Words, TF-IDF | feature engineering |
+| n-gram range | (1,1) unigrams, (1,2) uni+bigrams | feature engineering |
+| stemming | off, on (Porter) | feature engineering |
+| `model_type` | Multinomial, Bernoulli (Bernoulli only pairs with BoW) | hyper-parameter |
+| `alpha` | 0.1, 0.5, 1.0 | hyper-parameter |
+
+(Stop-word removal is examined separately in 6a-ii, and `min_df` in 6a-iii, so the main grid stays
+a readable size.)
+
+**No leakage.** For every fold the vectorizer is re-fit **from scratch on that fold's 4 training
+parts** and merely *applies* to the held-out part - the vocabulary and the IDF weights never see
+the validation reviews.
+""")
+code(r"""
+def cv_folds(y, n_splits=5, seed=RANDOM_STATE):
+    return list(StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed).split(y, y))
+
+
+def run_grid(texts, y, grid, n_splits=5, seed=RANDOM_STATE, verbose=True):
+    # grid: list of (feature_kwargs, nb_kwargs). Vectorise once per unique feature config per
+    # fold, then score every NB config that uses it. Returns a DataFrame, one row per permutation.
+    folds = cv_folds(y, n_splits, seed)
+    fe_configs = []
+    for fe, _ in grid:
+        if fe not in fe_configs:
+            fe_configs.append(fe)
+
+    rows = []
+    for fe in fe_configs:
+        t0 = time.time()
+        mats = []
+        for tr, va in folds:
+            vec = build_vectorizer(**fe)
+            mats.append((vec.fit_transform(texts[tr]), y[tr], vec.transform(texts[va]), y[va]))
+        vt = time.time() - t0
+        for nb in [n for f, n in grid if f == fe]:
+            s = np.array([score(yv, NaiveBayesTextClassifier(**nb).fit(Xt, yt).predict(Xv))
+                          for Xt, yt, Xv, yv in mats])
+            rows.append({
+                "vectorizer": fe["kind"], "ngrams": str(fe["ngram_range"]),
+                "stemming": fe["use_stemming"], "stopwords_removed": fe.get("remove_stopwords", False),
+                "min_df": fe["min_df"], "model_type": nb["model_type"], "alpha": nb["alpha"],
+                "cv_mean_f1": s.mean(), "cv_std_f1": s.std(), "fold_f1": np.round(s, 4).tolist(),
+            })
+        del mats
+        if verbose:
+            print("  %-5s %-6s stem=%-5s min_df=%-2s : 5 folds vectorised in %4.1fs"
+                  % (fe["kind"], fe["ngram_range"], fe["use_stemming"], fe["min_df"], vt))
+    return (pd.DataFrame(rows)
+            .sort_values("cv_mean_f1", ascending=False, ignore_index=True))
+
+
+MAIN_GRID = []
+for _kind in ("bow", "tfidf"):
+    for _ng in [(1, 1), (1, 2)]:
+        for _use_stem in (False, True):
+            _fe = dict(kind=_kind, ngram_range=_ng, use_stemming=_use_stem,
+                       remove_stopwords=False, min_df=5, max_features=30_000)
+            _mtypes = ("multinomial", "bernoulli") if _kind == "bow" else ("multinomial",)
+            for _mt in _mtypes:
+                for _alpha in (0.1, 0.5, 1.0):
+                    MAIN_GRID.append((_fe, dict(model_type=_mt, alpha=_alpha)))
+
+print("main grid: %d permutations over %d unique feature configs"
+      % (len(MAIN_GRID), len({tuple(sorted(f.items())) for f, _ in MAIN_GRID})))
+""")
+code(r"""
+_t0 = time.time()
+results_df = run_grid(df_train["review"].to_numpy(), df_train["label"].to_numpy(), MAIN_GRID)
+print("\ngrid search finished in %.0f s" % (time.time() - _t0))
+results_df
+""")
+
+md(r"""
+### Best configuration from the main grid
+""")
+code(r"""
+best_row = results_df.iloc[0]
+print("best permutation (cross-validated macro-F1 = %.4f  +/- %.4f):\n" % (
+    best_row["cv_mean_f1"], best_row["cv_std_f1"]))
+print(best_row[["vectorizer", "ngrams", "stemming", "model_type", "alpha", "fold_f1"]].to_string())
+
+fig, ax = plt.subplots(figsize=(9, 4))
+_top = results_df.head(12).iloc[::-1]
+_lab = _top["vectorizer"] + " " + _top["ngrams"] + "  " + _top["model_type"].str[:4] \
+       + " a=" + _top["alpha"].astype(str) + (_top["stemming"].map({True: " stem", False: ""}))
+ax.barh(_lab, _top["cv_mean_f1"], xerr=_top["cv_std_f1"], color="#4477aa")
+ax.set_xlim(_top["cv_mean_f1"].min() - 0.01, results_df["cv_mean_f1"].max() + 0.005)
+ax.set_xlabel("cross-validated macro-F1"); ax.set_title("Top 12 configurations"); plt.tight_layout(); plt.show()
+""")
+
+md(r"""
+### 6a-ii. Feature-engineering experiment - stop-word removal
+
+Taking the winning vectorizer/model, does removing English stop words help? For sentiment it often
+does **not**, because words like *not*, *no*, *very* are on the stop-word list.
+""")
+code(r"""
+_NG = {"(1, 1)": (1, 1), "(1, 2)": (1, 2)}
+_fe_base = dict(kind=best_row["vectorizer"], ngram_range=_NG[best_row["ngrams"]],
+                use_stemming=bool(best_row["stemming"]), min_df=int(best_row["min_df"]),
+                max_features=30_000)
+_nb_best = dict(model_type=best_row["model_type"], alpha=float(best_row["alpha"]))
+STOPWORD_GRID = [({**_fe_base, "remove_stopwords": rs}, _nb_best) for rs in (False, True)]
+stopword_df = run_grid(df_train["review"].to_numpy(), df_train["label"].to_numpy(), STOPWORD_GRID)
+stopword_df[["vectorizer", "ngrams", "stemming", "stopwords_removed", "model_type", "alpha",
+             "cv_mean_f1", "cv_std_f1"]]
+""")
+
+md(r"""
+### 6a-iii. Feature-engineering experiment - vocabulary pruning (`min_df`)
+
+How aggressively should rare terms be dropped? `min_df=1` keeps every hapax (including typos);
+larger values shrink the vocabulary and can reduce over-fitting.
+
+Expect this experiment to come out **flat**, and it is worth understanding why: `max_features` is
+already set to 30,000, so the vectorizer keeps only the 30,000 most frequent terms no matter what.
+Any term that survives that cut is common enough to clear even a large `min_df`, so the two pruning
+knobs overlap and `max_features` is the one doing the work here. `min_df` would matter much more if
+the vocabulary were left uncapped.
+""")
+code(r"""
+MINDF_GRID = [({**_fe_base, "remove_stopwords": bool(best_row["stopwords_removed"]), "min_df": m}, _nb_best)
+              for m in (1, 2, 5, 10, 20)]
+mindf_df = run_grid(df_train["review"].to_numpy(), df_train["label"].to_numpy(), MINDF_GRID)
+mindf_df[["min_df", "cv_mean_f1", "cv_std_f1", "fold_f1"]]
+""")
+
+md(r"""
+### 6a summary
+
+All experiments are cross-validated macro-F1 on the **training set only**. The winning pipeline is
+assembled from the main grid's best row plus the two follow-up experiments, and is carried forward
+to Part 4 (retrain on the full training set) and Part 5 (evaluate once on the test set). Where an
+experiment ends in a tie inside the noise band, we keep the simpler model rather than chase the
+fourth decimal - see the `min_df` note in the code below.
+""")
+code(r"""
+# assemble the final winning configuration
+WIN_FE = dict(_fe_base)
+WIN_FE["remove_stopwords"] = bool(stopword_df.iloc[0]["stopwords_removed"])
+# min_df: the sweep above spans only ~4e-5 of macro-F1, i.e. noise, so we do not take the raw
+# argmax - we keep min_df=5, the smaller and cheaper vocabulary, on the usual "when two models
+# are tied, prefer the simpler one" rule.
+WIN_FE["min_df"] = 5
+WIN_NB = dict(_nb_best)
+# the cross-validated score of the configuration we actually carry forward
+WIN_CV = float(mindf_df.loc[mindf_df["min_df"] == WIN_FE["min_df"], "cv_mean_f1"].iloc[0])
+print("WINNING PIPELINE")
+print("  features :", WIN_FE)
+print("  model    :", WIN_NB)
+print("  cross-validated macro-F1 of this pipeline (train) : %.4f" % WIN_CV)
+""")
+
+# ==========================================================================================
+# 4. Part 4 - Train the winning configuration on the full training set
+# ==========================================================================================
+md(r"""
+---
+## Part 4 - Training the winning configuration on the whole training set
+
+Cross-validation in Part 6a only used 4/5 of the training data at a time. Now we lock in the
+winning configuration and **re-fit it on the entire training set** - vectorizer and Naive Bayes -
+so the final model uses every available training review. The test set is still untouched.
+""")
+code(r"""
+final_vec = build_vectorizer(**WIN_FE)
+X_train_final = final_vec.fit_transform(df_train["review"])
+X_test_final = final_vec.transform(df_test["review"])
+final_clf = NaiveBayesTextClassifier(**WIN_NB).fit(X_train_final, ytr)
+
+print("re-fit on all %d training reviews" % X_train_final.shape[0])
+print("  features   :", WIN_FE)
+print("  model      :", WIN_NB)
+print("  vocabulary :", len(final_vec.vocabulary_))
+print("  training macro-F1 (resubstitution) : %.4f" % score(ytr, final_clf.predict(X_train_final)))
+print("  cross-validated macro-F1 (Part 6a) : %.4f" % WIN_CV)
+""")
+
+md(r"""
+### The winning feature-engineering pipeline, step by step on 2-3 examples
+
+The same three reviews from Part 2b, now pushed through the **chosen** configuration and the
+model that was fitted on the full training set.
+""")
+code(r"""
+def trace_example(text, vec, clf, k=10):
+    cleaned = clean_text(text)
+    toks = tokenize(cleaned, use_stemming=WIN_FE["use_stemming"],
+                    remove_stopwords=WIN_FE["remove_stopwords"])
+    x = vec.transform([text])
+    vocab = vec.get_feature_names_out()
+    row = x.toarray().ravel(); nz = row.nonzero()[0]
+    llr = clf.feature_log_prob_[1] - clf.feature_log_prob_[0]        # + => pushes to positive
+    contrib = row[nz] * llr[nz]
+    order = nz[np.argsort(-np.abs(contrib))][:k]
+    feats = ", ".join("%s(%+.2f)" % (vocab[j], row[j] * llr[j]) for j in order)
+    return cleaned, toks, int(nz.size), feats
+
+
+for _, r in demo.iterrows():
+    cleaned, toks, n_nz, feats = trace_example(r["review"], final_vec, final_clf)
+    p_pos = final_clf.predict_proba(final_vec.transform([r["review"]]))[0, 1]
+    print("[%s] actual=%d  P(pos)=%.3f" % (r["split"], int(r["label"]), p_pos))
+    print("  cleaned  :", cleaned[:130], "...")
+    print("  tokens   : %d ->" % len(toks), " ".join(toks[:16]))
+    print("  features : %d non-zero; strongest signed contributions (feature*log-likelihood-ratio):" % n_nz)
+    print("            ", feats, "\n")
+""")
+
+# ==========================================================================================
+# 5. Part 5 - Prediction and quality on the test set
+# ==========================================================================================
+md(r"""
+---
+## Part 5 - Prediction and quality assessment on the test set
+
+The test set is used **once**, here. Same fitted vectorizer (only *transform*), same fitted model.
+""")
+md(r"""
+### Feature engineering on 3 held-out test reviews
+""")
+code(r"""
+for i in [10, 111, 900]:
+    r = df_test.iloc[i]
+    cleaned, toks, n_nz, feats = trace_example(r["review"], final_vec, final_clf)
+    p_pos = final_clf.predict_proba(final_vec.transform([r["review"]]))[0, 1]
+    print("test row %d  actual=%d  P(pos)=%.3f  ->  predicted=%d" % (i, int(r["label"]), p_pos, int(p_pos > 0.5)))
+    print("  cleaned  :", cleaned[:130], "...")
+    print("  tokens   : %d ->" % len(toks), " ".join(toks[:16]))
+    print("  features :", feats, "\n")
+""")
+
+md(r"""
+### First 5 predictions on the test set
+""")
+code(r"""
+test_pred = final_clf.predict(X_test_final)
+test_pp = final_clf.predict_proba(X_test_final)[:, 1]
+name = {0: "neg", 1: "pos"}
+pd.DataFrame({
+    "review (first 90 chars)": df_test["review"].str[:90] + "...",
+    "actual": [name[v] for v in yte[:len(df_test)]],
+    "predicted": [name[v] for v in test_pred],
+    "P(pos)": test_pp.round(3),
+}).head()
+""")
+
+md(r"""
+### Quality on the full test set
+
+The quality index is **macro-averaged F1** (Part "Quality index").
+""")
+code(r"""
+test_f1 = score(yte, test_pred)
+print("TEST macro-F1               : %.4f" % test_f1)
+print("cross-validated estimate    : %.4f   (Part 6a, training set)" % WIN_CV)
+print()
+print(classification_report(yte, test_pred, target_names=["neg", "pos"], digits=4))
+""")
+code(r"""
+cm = confusion_matrix(yte, test_pred)
+fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False,
+            xticklabels=["neg", "pos"], yticklabels=["neg", "pos"], ax=ax[0])
+ax[0].set_xlabel("predicted"); ax[0].set_ylabel("actual"); ax[0].set_title("Confusion matrix - test set")
+
+# most predictive terms per class, by log-likelihood ratio
+llr = final_clf.feature_log_prob_[1] - final_clf.feature_log_prob_[0]
+vocab = np.array(final_vec.get_feature_names_out())
+k = 15
+idx = np.concatenate([np.argsort(llr)[:k], np.argsort(llr)[-k:]])
+colors = ["#cc4444"] * k + ["#44aa44"] * k
+ax[1].barh(range(2 * k), llr[idx], color=colors)
+ax[1].set_yticks(range(2 * k)); ax[1].set_yticklabels(vocab[idx], fontsize=8)
+ax[1].set_title("Most predictive terms  (<- negative | positive ->)")
+ax[1].set_xlabel("log P(term|pos) - log P(term|neg)")
+plt.tight_layout(); plt.show()
+""")
+
+# ==========================================================================================
+# Conclusions + appendix
+# ==========================================================================================
+md(r"""
+---
+## Conclusions
+
+- The full supervised flow ran end to end on the fixed IMDB train/test split: text cleaning ->
+  tokenisation -> BoW / TF-IDF vectorisation -> a **from-scratch Naive Bayes** classifier, selected
+  by leakage-safe 5-fold cross-validated grid search and evaluated once on the test set.
+- The from-scratch `NaiveBayesTextClassifier` reproduces scikit-learn's `MultinomialNB` /
+  `BernoulliNB` to ~1e-13, so the algorithm is implemented correctly.
+- The final test score lands a little over one point below the cross-validated estimate from
+  Part 6a (and further below the resubstitution score on the training set in Part 4). A small drop
+  in that direction is exactly what an honest evaluation looks like: cross-validation is mildly
+  optimistic because each configuration was *chosen* by its cross-validated score, and the Stanford
+  split deliberately keeps the films in the test set disjoint from those in the training set - so
+  the movie-specific vocabulary the model picks up (actor and character names, as visible in the
+  traced examples) does not transfer. There is no sign of leakage or of tuning against the test set,
+  which would have shown up as the opposite pattern.
+- Most-predictive-term analysis shows the model keys on exactly the words a human would use to
+  judge sentiment.
+- What we would try next, given more time: keeping negation ("not good" as a feature is already
+  captured by bigrams, but explicit negation-scoping would go further), lemmatisation instead of
+  Porter stemming, and lifting the 30,000-feature cap now that we know `max_features` - not
+  `min_df` - is the binding pruning constraint.
+- Not pursued here (possible extensions from the brief): imbalanced-data techniques (6b - not
+  needed, this dataset is 50/50), and model-agnostic explainability such as SHAP (6c).
+""")
+md(r"""
+### Appendix - values for the shared Excel sheet
+
+| Field | Value |
+|---|---|
+| Assignment type | text analysis (NLP) |
+| Learning type | classification (binary) |
+| Learning algorithm implemented | Naive Bayes (Multinomial + Bernoulli), from scratch |
+| Dataset name | IMDB 50K Movie Reviews (TEST your BERT) |
+| Dataset URL | https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert |
+| Repository URL | https://github.com/Tomer-Raz/machine-learning-hit |
+| Video URL | *(to be added)* |
+""")
+
+# ==========================================================================================
 # assemble
 # ==========================================================================================
 nb = nbf.v4.new_notebook()
