@@ -31,9 +31,41 @@ Report findings as a list with file and cell references. If you find nothing, sa
 than inventing something minor to appear thorough.
 ```
 
-**What came back:** no leakage found. Every `fit_transform` inside `run_grid` runs on a fold's
-training portion; the final vectorizer is fitted on the training set only and the test set is only
-ever `transform`ed; the test set is scored in exactly one place.
+**What came back:** no leakage in the modelling — every `fit_transform` inside `run_grid` runs on a
+fold's training portion, the final vectorizer is fitted on the training set only, and the test set is
+never fitted on. But the audit **did** find a real problem, on the last question:
+
+> The correctness check in Part 3 ran its real-data comparison on the **test** set and printed a test
+> macro-F1 (0.8699) for the untuned baseline — while Part 5 stated in writing that the test set is
+> used only once. No decision was made from that number, so it was not leakage in the harmful sense,
+> but the notebook contradicted its own stated rule, and it invited the awkward question of why the
+> untuned baseline scored higher on test than the tuned final model. (Half a point — noise.)
+
+**What I did with it:** fixed it rather than explaining it away. The follow-up prompt was:
+
+```text
+Fix this properly, and check for the same problem everywhere else rather than patching the one line
+I noticed.
+
+- Change the Part 3 real-data parity check so it holds out a stratified fifth of the TRAINING set,
+  fits both models on the rest, and compares on that held-out slice. Report the max log-probability
+  difference and my model's score on the slice. Do not read test labels anywhere in Part 3.
+- Then find EVERY other place the test set is touched before Part 5, including places that merely
+  transform it or materialise its labels into a variable, and move each one to its point of use in
+  Part 5 - unless the brief explicitly requires it earlier.
+- Tell me which touches are legitimate because the brief demands them, so I can defend those.
+- Rebuild and re-run the whole notebook so the committed outputs match.
+```
+
+**Result:** three more places turned up beyond the one I had spotted — the baseline cell in Part 2c
+was transforming the whole test set into a feature matrix, it was materialising the test labels into
+`yte`, and Part 4 was transforming the test set a second time. None of them leaked, but none of them
+needed to be there. All three moved into Part 5.
+
+After the fix, the only pre-Part-5 contact with the test set is the four things the brief explicitly
+requires: loading it, showing `.head()`, describing it in the data summary, and running one test
+review through the feature-engineering demonstration. No test feature matrix and no test labels exist
+before Part 5.
 
 ---
 
@@ -85,8 +117,8 @@ Cover at minimum:
 Be strict. A requirement that is "sort of" met is not met.
 ```
 
-**What came back:** all requirements met, with cell references. One item came back qualified rather
-than clean — the Part 2 demonstration uses two training examples and one test example, where the
+**What came back:** all requirements met, with cell references — after the test-set fix above. One
+item came back qualified rather than clean — the Part 2 demonstration uses two training examples and one test example, where the
 brief says "2–3" of each. Part 5 covers the test side properly with three traced test reviews under
 the winning configuration, so the requirement is satisfied across the notebook as a whole.
 

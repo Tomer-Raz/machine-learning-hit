@@ -91,6 +91,12 @@ Update this block and `docs/PROGRESS.md` at the end of every work session.
   altered.
 - The **test set has labels** here (pos/neg) — Part 5 scores it directly.
 - **5-fold cross-validation runs only inside the trainset.** The test set is touched once, at the end.
+  This is now enforced *structurally*, not just by intention: no test feature matrix and no `yte`
+  exist anywhere before Part 5 — `X_test_final` and `yte` are created in the Part 5 cell, at the
+  point of use. The Part 3c parity check compares on a held-out stratified fifth of the **training**
+  set for the same reason. The only permitted pre-Part-5 contact with the test set is the four things
+  the brief demands: loading it, `.head()`, the Part 1 data description, and one test review in the
+  Part 2b demo. **Do not reintroduce an early `Xte`.**
 - Feature engineering must be shown **step-by-step on 2–3 train + 2–3 test examples**
   (raw text → final vector), and again after the winning config is picked (Parts 4 & 5).
 - **No leakage:** fit the vectorizer / IDF / vocabulary pruning **inside each CV fold** on the

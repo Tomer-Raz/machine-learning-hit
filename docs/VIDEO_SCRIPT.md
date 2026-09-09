@@ -81,8 +81,10 @@ without stop words → stemmed:
 
 > "To prove the implementation is right, not just plausible, I compare it against scikit-learn's
 > `MultinomialNB` and `BernoulliNB` across several `alpha` values — the log-probabilities agree to
-> about 1e-13, and the predictions are identical on all 25,000 test reviews. scikit-learn is used
-> only as a reference here; the model I actually use is mine."
+> about 1e-13, and every prediction is identical. Note that I run that comparison on a held-out fifth
+> of the *training* set, not on the test set — the test set is reserved for Part 5, and a correctness
+> check does not justify spending it early. scikit-learn is used only as a reference here; the model
+> I actually use is mine."
 
 ## 3:15–4:15 — Part 6a: grid search with 5-fold cross-validation
 

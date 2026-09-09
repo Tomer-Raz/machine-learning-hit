@@ -100,8 +100,11 @@ Compare my class against scikit-learn's MultinomialNB and BernoulliNB as a refer
 - On synthetic count data with a fixed seed, across several alpha values AND both fit_prior
   settings, assert that the predictions are identical and report the maximum absolute difference in
   predicted log-probabilities.
-- Then on the REAL IMDB feature matrix from Part 2, assert my predictions match sklearn's on every
-  test review, and print my from-scratch model's test macro-F1 alongside.
+- Then on the REAL IMDB features from Part 2, because synthetic data does not exercise a 50,000-
+  column sparse matrix. The comparison needs data the models were not fitted on - and it must NOT be
+  the test set, which is reserved for Part 5. Hold out a stratified fifth of the TRAINING set for it
+  instead: fit both models on the other four fifths, then assert identical predictions on the
+  held-out slice and report the maximum log-probability difference there.
 - Use assertions so the notebook FAILS LOUDLY if this ever stops holding - I do not want a check
   that silently prints a bad number.
 - Print the maximum log-probability difference explicitly, so the committed output is evidence a
@@ -111,9 +114,14 @@ Add a comment making it unambiguous that scikit-learn appears here as a referenc
 never the model that produces my results.
 ```
 
-**What came back:** the Part 3c check. It reports a maximum log-probability difference of about
-1e-13 — floating-point noise — and identical predictions on all 25,000 test reviews, for both the
-Multinomial and Bernoulli variants.
+**What came back:** the Part 3c check. On synthetic data it reports a maximum log-probability
+difference of 1.42e-13 with identical predictions, for both the Multinomial and Bernoulli variants;
+on the real IMDB features it fits both models on 19,923 training reviews, compares them on the 4,981
+held out, and reports 4.26e-13 with identical predictions there too.
+
+**Note on the held-out slice:** the first version of this check ran the real-data comparison on the
+**test** set. That was caught later in the audit — see [09](09-verification-and-review.md) — and
+changed to a training-set slice, which proves the same thing without reading test labels early.
 
 **Why I wanted it this way:** it converts "I implemented Naive Bayes" from a claim into something
 demonstrated in committed output, and the assertions mean the claim cannot rot silently if I edit

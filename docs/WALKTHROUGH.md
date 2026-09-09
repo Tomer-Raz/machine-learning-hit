@@ -355,8 +355,10 @@ Cell 21 shows plain word counts, and deliberately points out that the highest co
 words like *the* — which is exactly why TF-IDF exists. Cell 22 then shows the same three reviews as
 TF-IDF, where distinctive words outrank common ones.
 
-**Cell 24** builds the baseline feature table for the whole dataset: 24,904 reviews × 50,000
-features. Only **0.47 %** of that table is non-zero — because any single review contains only a few
+**Cell 24** builds the baseline feature table for the training set: 24,904 reviews × 50,000
+features. It deliberately does **not** build one for the test set — no test feature matrix exists
+anywhere in the notebook until Part 5, so no earlier code can accidentally learn from it. Only
+**0.47 %** of the training table is non-zero — because any single review contains only a few
 hundred distinct words out of 50,000 possible. That is why it is stored as a "sparse" table, which
 records only the non-zeros.
 
@@ -385,21 +387,22 @@ probabilities together, a single such word would drive the whole answer to zero 
 other word in the review. Adding a small amount (`alpha`) to every count prevents that.
 
 **Cell 29 proves the implementation is correct.** It compares our classifier against scikit-learn's
-ready-made one, across several settings, and checks they agree. The result: the probabilities match
-to **1.42e-13** (that is 0.000000000000142 — floating-point rounding noise), and the predictions are
-identical on all 25,000 reviews.
+ready-made one and checks that they agree, in two ways:
+
+- on **made-up data**, across four `alpha` values and both `fit_prior` settings, for both the
+  Multinomial and the Bernoulli variant — probabilities match to **1.42e-13** (that is
+  0.000000000000142, pure floating-point rounding noise) and every prediction is identical;
+- on the **real IMDB features**, where both models are trained on 19,923 training reviews and then
+  compared on the 4,981 training reviews held back from that fit — again identical predictions, with
+  probabilities matching to **4.26e-13**.
+
+Note *where* that second comparison happens: on a slice of the **training** set. It needs data the
+models were not fitted on, and the test set is not allowed to be that data — it is reserved for
+Part 5. Holding out a fifth of the training data proves exactly the same thing without reading a
+single test label early.
 
 This is the difference between *claiming* you implemented Naive Bayes and *showing* it. scikit-learn
 appears here as a ruler to measure against — never as the model that produces our results.
-
-> **⚠ One flaw to fix before you submit.** The last two lines of this cell run the comparison on the
-> **test** set, and print a test score (0.8699) for the untuned baseline. Nothing is decided from
-> that number — the whole grid search that follows uses only the training data — but it contradicts
-> the sentence in Part 5 that says the test set is used only once, and it invites the awkward
-> question *"why is your baseline's test score higher than your final model's?"* (The answer is that
-> they differ by half a point, which is noise, and that the baseline number was never used to choose
-> anything.) The clean fix is to run this comparison on a held-out slice of the **training** set
-> instead, which proves exactly the same thing without reading the test labels early. See section 10.
 
 ### Cells 30–40 — Grid search with cross-validation *(Part 6a — 25 points)*
 
@@ -452,7 +455,8 @@ is not.
 ### Cells 41–44 — Training the winner *(Part 4)*
 
 Cross-validation only ever trained on 4/5 of the data at a time. Now we rebuild the winning setup
-and train it on **all 24,904** training reviews.
+and train it on **all 24,904** training reviews. The test set is still untouched at this point — it
+is not even converted into numbers until the next part.
 
 Output: vocabulary of 30,000 features, and a score of **0.9068 on the training data itself**. That
 last number is labelled "resubstitution" and is *not* a measure of how good the model is — it is the
@@ -570,8 +574,10 @@ and fully explain it. It also gives interpretable output: I can show exactly whi
 individual prediction.
 
 **"How do you know your implementation is correct?"**
-Cell 29. I compared it against scikit-learn's implementation across several settings, on synthetic
-data and on the real features. Probabilities agree to 1.42e-13 and every prediction is identical.
+Cell 29. I compared it against scikit-learn's implementation across several settings — on made-up
+data, and on the real IMDB features using a held-out fifth of the training set. Probabilities agree
+to within about 4e-13 and every prediction is identical. I used a training slice rather than the
+test set on purpose, so the check costs me nothing in terms of the test-set rule.
 
 **"Isn't the independence assumption wrong?"**
 Yes, completely — words in real sentences depend heavily on each other. Naive Bayes works anyway
@@ -579,10 +585,11 @@ because to classify correctly it does not need accurate probabilities, only the 
 between the two classes. Adding bigrams also recovers some of the lost word-order information.
 
 **"Where does the test set get used?"**
-Part 5, at the end. Everything that makes a *decision* — all 36 grid combinations and both follow-up
-experiments — uses only the training set, through 5-fold cross-validation. (As shipped, the
-correctness check in Part 3 also predicts on the test set to compare against scikit-learn; no choice
-is made from it, and section 6 explains how to remove it.)
+Part 5, at the end, and nowhere else. Before that it is only loaded, shown with `.head()`, described
+in the data summary, and used for one review in the feature-engineering demonstration — all four of
+those being things the brief explicitly asks for. It is never converted into a feature matrix and
+its labels are never read until Part 5. Everything that makes a decision — all 36 grid combinations
+and both follow-up experiments — runs on the training set through 5-fold cross-validation.
 
 **"Why is TF-IDF better than plain counting here?"**
 Counting is dominated by words like *the* and *movie*, which appear in every review and separate
@@ -615,17 +622,8 @@ leakage-free process around it, and 86.5 % is a solid result for Naive Bayes on 
 | Repository URL | https://github.com/Tomer-Raz/machine-learning-hit |
 | Video URL | *(fill in after uploading)* |
 
-### Fix this first
-
-The correctness check in Part 3 (cell 29) scores the **test** set, which contradicts the "test set
-used once" rule stated in Part 5. To fix it, edit `tools/build_notebook.py`, change the last block of
-the Part 3c cell so the real-data comparison fits on one slice of the **training** matrix and checks
-predictions on another slice, and drop the printed test score. Then rebuild and re-run (section 5).
-It changes one printed line and removes the only rule violation in the notebook.
-
 ### Before you submit
 
-- [ ] The Part 3 correctness check no longer touches the test set (see above)
 - [ ] Notebook opens on GitHub with all outputs visible, no need to run it
 - [ ] Student-details cell shows your name and the last 4 ID digits only — never the full number
 - [ ] AI-prompts cell present

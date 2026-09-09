@@ -73,6 +73,15 @@ Living checklist. Update at the end of every work session; keep the "current sta
   conclusions cell (selection makes CV mildly optimistic; the Stanford split keeps test films
   disjoint from train films, so movie-specific vocabulary does not transfer).
 
+- 2026-09-09 — **Test-set isolation fix.** The Part 3c parity check was comparing against
+  scikit-learn on the *test* set and printing a test macro-F1 (0.8699) before any tuning, which
+  contradicted Part 5's "used once" statement. It now holds out a stratified fifth of the training
+  set (fit on 19,923, compare on 4,981; identical predictions, max |log-prob diff| 4.26e-13). Three
+  further pre-Part-5 touches were removed at the same time: the Part 2c baseline no longer builds a
+  test matrix, `yte` is no longer materialised early, and Part 4 no longer transforms the test set —
+  `X_test_final` and `yte` are now created in Part 5, at the point of use. No result changed (test
+  macro-F1 is still 0.8648); only the audit trail improved.
+
 ## Open questions for the user
 
 - (none blocking) — grid size, kagglehub-vs-manual download, and Bernoulli-in-grid are

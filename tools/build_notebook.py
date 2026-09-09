@@ -440,21 +440,23 @@ md(r"""
 ### 2c. Baseline feature matrix
 
 Using that same fitted vectorizer - **TF-IDF, unigrams+bigrams, `min_df=5`, `max_features=50000`** -
-we transform the whole train and test sets. The vectorizer was fit on **train only**; the test set
-is only ever *transformed*. Part 6a searches for a better configuration; this establishes the
+we transform the training set. Part 6a searches for a better configuration; this establishes the
 shapes and gives Part 3 real data to run on.
+
+The test set is deliberately **not** transformed here. It is loaded and described in Part 1, and one
+test review is traced through the pipeline in 2b as the brief requires, but no test feature matrix
+exists until Part 5 - so no code before Part 5 can accidentally learn anything from it.
 """)
 code(r"""
 t0 = time.time()
 Xtr = base_vec.transform(df_train["review"])
-Xte = base_vec.transform(df_test["review"])
 ytr = df_train["label"].to_numpy()
-yte = df_test["label"].to_numpy()
 
 density = Xtr.nnz / (Xtr.shape[0] * Xtr.shape[1])
 print("baseline TF-IDF, (1,2)-grams, min_df=5, max_features=50000")
-print("  X_train: %s     X_test: %s     vocab: %d" % (Xtr.shape, Xte.shape, len(base_vec.vocabulary_)))
+print("  X_train: %s     vocab: %d" % (Xtr.shape, len(base_vec.vocabulary_)))
 print("  matrix density: %.4f%%   transformed in %.1fs" % (100 * density, time.time() - t0))
+print("  (no test matrix is built here - the test set is first transformed in Part 5)")
 """)
 
 # ==========================================================================================
@@ -620,12 +622,24 @@ for _a in (0.01, 0.5, 1.0, 2.0):
 
 print("synthetic data: multinomial + bernoulli match scikit-learn; max |log-prob diff| = %.2e" % _max_diff)
 
-# and on the real baseline IMDB features from Part 2
-_ours = NaiveBayesTextClassifier(alpha=0.1).fit(Xtr, ytr)
-_ref = SklearnMultinomialNB(alpha=0.1).fit(Xtr, ytr)
-assert (_ours.predict(Xte) == _ref.predict(Xte)).all()
-print("real IMDB features: predictions identical to scikit-learn on all %d test reviews" % Xte.shape[0])
-print("                    our from-scratch NB test macro-F1 = %.4f" % score(yte, _ours.predict(Xte)))
+# ...and on the real baseline IMDB features from Part 2. The comparison needs data the two models
+# were not fitted on, and it must NOT be the test set - that is reserved for Part 5 - so we hold out
+# a stratified fifth of the TRAINING set for it.
+_fit_i, _chk_i = next(StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+                      .split(np.zeros(len(ytr)), ytr))
+_ours = NaiveBayesTextClassifier(alpha=0.1).fit(Xtr[_fit_i], ytr[_fit_i])
+_ref = SklearnMultinomialNB(alpha=0.1).fit(Xtr[_fit_i], ytr[_fit_i])
+_pred_ours, _pred_ref = _ours.predict(Xtr[_chk_i]), _ref.predict(Xtr[_chk_i])
+_real_diff = np.abs(_ours.predict_log_proba(Xtr[_chk_i]) - _ref.predict_log_proba(Xtr[_chk_i])).max()
+assert (_pred_ours == _pred_ref).all()
+
+print("real IMDB features: fitted both on %d training reviews, compared on the %d held-out"
+      % (len(_fit_i), len(_chk_i)))
+print("                    training reviews - predictions identical, max |log-prob diff| = %.2e"
+      % _real_diff)
+print("                    our from-scratch NB macro-F1 on that held-out slice = %.4f"
+      % score(ytr[_chk_i], _pred_ours))
+print("                    (the test set is untouched until Part 5)")
 """)
 
 
@@ -816,7 +830,6 @@ so the final model uses every available training review. The test set is still u
 code(r"""
 final_vec = build_vectorizer(**WIN_FE)
 X_train_final = final_vec.fit_transform(df_train["review"])
-X_test_final = final_vec.transform(df_test["review"])
 final_clf = NaiveBayesTextClassifier(**WIN_NB).fit(X_train_final, ytr)
 
 print("re-fit on all %d training reviews" % X_train_final.shape[0])
@@ -885,6 +898,10 @@ md(r"""
 ### First 5 predictions on the test set
 """)
 code(r"""
+# The one and only transform of the full test set - fitted vectorizer, transform only, never fit.
+X_test_final = final_vec.transform(df_test["review"])
+yte = df_test["label"].to_numpy()
+
 test_pred = final_clf.predict(X_test_final)
 test_pp = final_clf.predict_proba(X_test_final)[:, 1]
 name = {0: "neg", 1: "pos"}
