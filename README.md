@@ -30,6 +30,7 @@ untouched test set.
 | `docs/ASSIGNMENT.md` | Decoded spec, point map, notebook skeleton, algorithm & CV specs |
 | `docs/PROGRESS.md` | Progress checklist |
 | `docs/VIDEO_SCRIPT.md` | Timed script for the ~5-minute walkthrough video |
+| `docs/prompts/` | The AI prompts used to build the project, by phase, with what was checked or rejected each time |
 | `data/` | IMDB data (fetched by the notebook; not committed) |
 
 ## Running it
