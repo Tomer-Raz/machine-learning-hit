@@ -62,7 +62,7 @@ Update this block and `docs/PROGRESS.md` at the end of every work session.
   .venv/bin/jupyter nbconvert --to notebook --execute --inplace \
       --ExecutePreprocessor.timeout=2400 notebook.ipynb
   ```
-  **Never hand-edit `notebook.ipynb`.** The generated notebook still has all code inline and
+  **Never manually-edit `notebook.ipynb`.** The generated notebook still has all code inline and
   visible, as the brief requires. Constraint in the builder: cell sources are r-strings, so no
   triple-quotes inside them (use `#` comments in code cells, not docstrings).
 - `src/` and `tests/` are optional iteration scratch; if added, keep them a copy, not a fork.

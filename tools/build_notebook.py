@@ -1,5 +1,5 @@
 """
-Build `notebook.ipynb` for the IMDB / Naive-Bayes-from-scratch assignment.
+Build `notebook.ipynb` for the IMDB / Naive-Bayes-from-scratch assignment
 
 The notebook is GENERATED from this file so it is easy to iterate on with clean diffs.
 The generated notebook still contains every line of code inline and visible, as the brief requires.

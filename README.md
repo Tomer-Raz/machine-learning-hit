@@ -1,4 +1,4 @@
-# machine-learning-hit
+# machine-learning-hit assiginment
 
 HIT intro Machine Learning course assignment — an end-to-end **supervised-learning pipeline** for
 a **text-analysis (NLP)** problem, with the learning algorithm (**Naive Bayes**) **implemented
