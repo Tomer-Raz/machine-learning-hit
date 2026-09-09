@@ -83,10 +83,12 @@ Base target ≈ 100 pts (Parts 1–5) plus partial 6a.
 
 - Load a **train set** and a **test set**; show `.head()` of **each**. Do **not** re-split, and
   do **not** merge-then-resplit.
-  - **This dataset ships its own split.** Load `imdb_master.csv` (columns `type`, `review`,
-    `label`), drop `label == 'unsup'` rows (~50k unlabeled), then split into train/test **by the
-    `type` column** — that is the official Stanford split (25k train / 25k test, both labeled,
-    balanced). Optionally persist to `data/train.csv` + `data/test.csv` and load those.
+  - **This dataset ships its own split.** Version 2 of the Kaggle dataset (the one we use) ships
+    `train.csv` and `test.csv` directly — 25k rows each, columns `text` / `sentiment`, both
+    labeled and balanced. `load_imdb()` reads them as given, renames to `review` / `label` and
+    maps `pos → 1`, `neg → 0`; that is the official Stanford split, used unchanged.
+    (An older version of the same dataset shipped a single `imdb_master.csv` with a `type` column
+    and ~50k extra `unsup` rows — not what we load.)
   - Map labels to binary: `pos → 1`, `neg → 0` (or keep strings — just be consistent).
 - The **test set has labels** here (`pos`/`neg`) — Part 5 scores it directly.
 - **5-fold cross-validation runs only inside the trainset.** The test set is touched once, at the end.

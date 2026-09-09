@@ -4,7 +4,8 @@ HIT intro Machine Learning course assignment — an end-to-end **supervised-lear
 a **text-analysis (NLP)** problem, with the learning algorithm (**Naive Bayes**) **implemented
 from scratch**.
 
-> Status: in progress. See [`docs/PROGRESS.md`](docs/PROGRESS.md).
+> Status: the notebook is complete and executed — Parts 1–5 plus the 6a grid-search extension.
+> Only the video recording is outstanding. See [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## Problem
 
@@ -28,6 +29,7 @@ untouched test set.
 | `ml.md` | Original assignment brief |
 | `docs/ASSIGNMENT.md` | Decoded spec, point map, notebook skeleton, algorithm & CV specs |
 | `docs/PROGRESS.md` | Progress checklist |
+| `docs/VIDEO_SCRIPT.md` | Timed script for the ~5-minute walkthrough video |
 | `data/` | IMDB data (fetched by the notebook; not committed) |
 
 ## Running it

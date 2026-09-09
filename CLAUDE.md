@@ -17,17 +17,23 @@ notebook with committed outputs + a ~5-minute explainer video.
 
 ## Current status / next step
 
-> **Status:** `notebook.ipynb` executes end-to-end with outputs committed. **Done:** Part 1
-> (data load from the dataset's own `train.csv`/`test.csv`, `.head()` of each, EDA), the
-> quality-index section (`score()` = macro-F1), and **Part 3** (`NaiveBayesTextClassifier`,
-> Multinomial + Bernoulli, parity-checked vs scikit-learn).
-> **Next:** add **Part 2 — feature engineering** to `tools/build_notebook.py` (insert its cells
-> *before* the Part 3 block), then Part 6a grid search, then Parts 4 & 5.
+> **Status: the notebook is COMPLETE.** `notebook.ipynb` is 55 cells, executes top-to-bottom with
+> outputs committed, zero errors — Parts 1, 2, 3, 4, 5, the quality-index section and the 6a
+> grid-search extension are all done.
 >
-> Env notes: `.venv` has the full stack; `kagglehub` anonymous download works (no token);
-> `truststore.inject_into_ssl()` in the setup cell handles the corporate TLS proxy.
-> Build+run: `.venv/bin/python tools/build_notebook.py && .venv/bin/jupyter nbconvert --to
-> notebook --execute --inplace --ExecutePreprocessor.timeout=2400 notebook.ipynb`
+> Final result: winning pipeline **TF-IDF · uni+bigrams · Porter stemming · Multinomial NB ·
+> `alpha=0.1` · `min_df=5` · `max_features=30000`** → cross-validated macro-F1 **0.8779** on the
+> training set, **0.8648** on the untouched test set (train resubstitution 0.9068).
+>
+> **Next:** record the ~5-minute video from `docs/VIDEO_SCRIPT.md`, then paste its URL into
+> `README.md`, `docs/PROGRESS.md` and the notebook's Excel-appendix cell (via the builder) and
+> re-run the notebook once.
+>
+> Env notes: `.venv` has the full stack; `kagglehub` anonymous download works (no token) and the
+> files are cached locally; `truststore.inject_into_ssl()` in the setup cell handles the corporate
+> TLS proxy. A full build+execute takes ~7 minutes on an idle machine:
+> `.venv/bin/python tools/build_notebook.py && .venv/bin/jupyter nbconvert --to notebook
+> --execute --inplace --ExecutePreprocessor.timeout=14400 notebook.ipynb`
 
 Update this block and `docs/PROGRESS.md` at the end of every work session.
 
@@ -112,11 +118,12 @@ ml.md                  original assignment brief (kept as-is)
 CLAUDE.md              this file
 README.md             human-facing overview + submission links
 requirements.txt       Python deps
-notebook.ipynb         THE deliverable (created next)
+notebook.ipynb         THE deliverable (complete, executed, outputs committed)
 data/                  IMDB data — download script / cell; raw files gitignored, see data/README.md
 docs/
   ASSIGNMENT.md         decoded spec, point map, notebook skeleton, NB spec, grid-search/CV spec
   PROGRESS.md           living checklist — update every session
+  VIDEO_SCRIPT.md       timed ~5-min script to record the video from
 src/  tests/            optional iteration scratch (may not exist)
 ```
 
