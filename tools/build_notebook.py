@@ -97,7 +97,7 @@ by project phase:
 | [07](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/07-part6a-grid-search-and-cv.md) | Part 6a - grid search + cross-validation |
 | [08](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/08-parts4-5-final-model-and-test.md) | Parts 4 & 5 - final model and test evaluation |
 | [09](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/09-verification-and-review.md) | auditing the finished work |
-| [10](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/10-repo-docs-and-video.md) | repository, documentation and video |
+| [10](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/10-repo-and-docs.md) | repository and documentation |
 
 Those prompts are reconstructed from the working sessions - they record the substance of what was
 asked and the constraints imposed, condensed for reading rather than kept as a verbatim log.
@@ -1008,7 +1008,6 @@ md(r"""
 | Dataset name | IMDB 50K Movie Reviews (TEST your BERT) |
 | Dataset URL | https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert |
 | Repository URL | https://github.com/Tomer-Raz/machine-learning-hit |
-| Video URL | *(to be added)* |
 """)
 
 # ==========================================================================================

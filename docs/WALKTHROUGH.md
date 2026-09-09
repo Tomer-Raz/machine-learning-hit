@@ -1,8 +1,7 @@
-# Walkthrough — what this assignment is, what we built, and how to present it
+# Walkthrough — what this assignment is and what we built
 
 This is the plain-English guide to the whole project. It assumes you know nothing about machine
-learning, and explains every idea the first time it appears. Read it top to bottom before you
-record the video.
+learning, and explains every idea the first time it appears.
 
 **Contents**
 
@@ -13,9 +12,8 @@ record the video.
 5. [How to run it](#5-how-to-run-it)
 6. [The notebook, part by part](#6-the-notebook-part-by-part)
 7. [The results, and what they mean](#7-the-results-and-what-they-mean)
-8. [What to present in the video](#8-what-to-present-in-the-video)
-9. [Questions you might be asked, and the answers](#9-questions-you-might-be-asked-and-the-answers)
-10. [Submission checklist](#10-submission-checklist)
+8. [Questions you might be asked, and the answers](#8-questions-you-might-be-asked-and-the-answers)
+9. [Submission checklist](#9-submission-checklist)
 
 ---
 
@@ -27,16 +25,14 @@ our clean reading of it is `docs/ASSIGNMENT.md`) asks for one thing, done proper
 > Take a dataset from Kaggle, run a complete supervised-learning process on it, and **write the
 > learning algorithm yourself** instead of calling a ready-made one.
 
-### The five things you must hand in
+### The four things you must hand in
 
 1. **A code notebook** where the results are visible **without re-running it**. That last part
    matters: a grader opens it and sees the outputs already there.
-2. **A video of about 5 minutes**, playable in a browser, where you introduce yourself and walk
-   through every part showing the code, its output, and an explanation.
-3. **The Kaggle link** to the dataset.
-4. **The repository link**, viewable without downloading anything.
-5. **A row in the shared Excel sheet** with: assignment type, learning type, algorithm, dataset
-   name, dataset URL, video URL, repository URL.
+2. **The Kaggle link** to the dataset.
+3. **The repository link**, viewable without downloading anything.
+4. **A row in the shared Excel sheet** with: assignment type, learning type, algorithm, dataset
+   name, dataset URL, repository URL.
 
 ### How the points are split
 
@@ -164,7 +160,6 @@ machine-learning-hit/
 └── docs/
     ├── ASSIGNMENT.md       our clean reading of the brief, plus the point map
     ├── PROGRESS.md         the project diary — what was done, when, and why
-    ├── VIDEO_SCRIPT.md     the timed script for your 5-minute video
     ├── WALKTHROUGH.md      this file
     └── prompts/            the AI prompts used, by phase (required disclosure)
 ```
@@ -339,9 +334,9 @@ This is where text becomes numbers. Three functions do the work:
   two-word phrases, stemming on or off, stop words on or off, and how aggressively to shrink the
   vocabulary.
 
-**One design point worth mentioning in the video:** `clean_text` and `tokenize` are plugged directly
-into the vectorizer. That means the demonstration you show the viewer and the pipeline that produced
-the real results are *literally the same code*. A demo that merely resembles the real pipeline can
+**One design point worth noting:** `clean_text` and `tokenize` are plugged directly into the
+vectorizer. That means the demonstration in the notebook and the pipeline that produced the real
+results are *literally the same code*. A demo that merely resembles the real pipeline can
 drift away from it and become a lie.
 
 **Cells 20–22 are the demonstration the brief requires.** Three real reviews — one positive from
@@ -437,7 +432,7 @@ across the 5 folds, and the 5 individual fold scores.
 
 **Cells 35–36 — experiment: do stop words help?** We predicted in writing, *before* showing the
 result, that removing stop words would **hurt** here. It did: 0.8684 with removal versus 0.8779
-without. The reason is worth saying out loud in the video — the standard stop-word list contains
+without. The reason is worth stating explicitly — the standard stop-word list contains
 *not*, *no* and *very*, and those are precisely the words that flip the meaning of a review.
 
 **Cells 37–38 — experiment: how much rare-word pruning?** We tried five settings of `min_df`
@@ -479,8 +474,8 @@ The exam. The vectorizer only **transforms** the test data — it is never re-fi
 
 - **Cell 47** — three test reviews traced end to end. One of them is a genuine near-miss: a sarcastic
   review that opens with the word *"Great"*, which the model calls positive with probability 0.513
-  when the true answer is negative. Show this one in the video — an honest near-miss is far more
-  interesting than three easy successes.
+  when the true answer is negative. An honest near-miss is far more interesting than three easy
+  successes.
 - **Cell 49** — the **first 5 predictions**, exactly as the brief asks: the review text, the true
   label, the predicted label, and the probability. Four negatives and one positive, all five correct.
 - **Cell 51** — the headline result: **test macro-F1 = 0.8648**, plus a full breakdown per class.
@@ -532,47 +527,7 @@ not biased toward either answer.
 
 ---
 
-## 8. What to present in the video
-
-The full script, timed to the second, is in **`docs/VIDEO_SCRIPT.md`** — use that as your actual
-script. This section is the summary of *why* it is built that way.
-
-You have about 5 minutes and 7 parts to cover, which is roughly 40 seconds each. So do not read code
-aloud line by line. Point at the output, say what it means, and move on.
-
-| Time | Cover | The one sentence that matters |
-|---|---|---|
-| 0:00–0:30 | Who you are, assignment type, learning type, algorithm, dataset | "The algorithm is implemented from scratch." |
-| 0:30–1:15 | Loading the given split, both `.head()`s, the balance chart, and the metric choice | "The classes are balanced with no class of special interest, so the correct measurement is macro-F1." |
-| 1:15–2:15 | Cleaning → tokens → stemming → Bag-of-Words → TF-IDF, on real reviews | "Bigrams are why the model can learn *not good* rather than *not* and *good* separately." |
-| 2:15–3:15 | The Naive Bayes maths, the class, the correctness check | "It matches scikit-learn to 1e-13, so the implementation is provably right." |
-| 3:15–4:15 | Grid search and cross-validation | "The vectorizer is rebuilt inside every fold — otherwise the vocabulary would leak information from the validation data." |
-| 4:15–5:00 | Final training, the test result, the charts, conclusions | "Training highest, cross-validation middle, test lowest — that ordering is what an honest evaluation looks like." |
-
-### The four things that win points
-
-Most students can show a working notebook. These are what separate a good presentation:
-
-1. **Explain leakage and show where you prevented it.** Point at the line inside the fold loop where
-   the vectorizer is rebuilt. Say what would have gone wrong otherwise.
-2. **Present your two negative results as findings, not failures.** Stop-word removal hurt, and you
-   predicted it would, for a reason you can state. The `min_df` experiment was flat, and you can
-   explain exactly which other setting made it flat. A negative result you can explain demonstrates
-   more understanding than a positive one you cannot.
-3. **Explain the gap between 0.8779 and 0.8648** rather than hoping nobody asks.
-4. **Say what you skipped and why.** 6b (imbalanced-data handling) is meaningless on a 50/50
-   dataset — saying so shows you understood what 6b is for.
-
-### Practical recording tips
-
-- Have the notebook open with all outputs already visible. **Do not run anything on camera.**
-- Zoom to about 150 % so the code is readable in the recording.
-- Upload as **unlisted** on YouTube — playable in a browser without downloading.
-- Introduce yourself in the first sentence. It is an explicit requirement.
-
----
-
-## 9. Questions you might be asked, and the answers
+## 8. Questions you might be asked, and the answers
 
 **"Why Naive Bayes?"**
 It is the classic algorithm for text classification, it is fast, and — importantly for an assignment
@@ -622,7 +577,7 @@ leakage-free process around it, and 86.5 % is a solid result for Naive Bayes on 
 
 ---
 
-## 10. Submission checklist
+## 9. Submission checklist
 
 ### Values for the shared Excel sheet
 
@@ -634,7 +589,6 @@ leakage-free process around it, and 86.5 % is a solid result for Naive Bayes on 
 | Dataset name | IMDB 50K Movie Reviews |
 | Dataset URL | https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert |
 | Repository URL | https://github.com/Tomer-Raz/machine-learning-hit |
-| Video URL | *(fill in after uploading)* |
 
 ### Before you submit
 
@@ -643,8 +597,5 @@ leakage-free process around it, and 86.5 % is a solid result for Naive Bayes on 
 - [ ] AI-prompts cell present
 - [ ] Both `.head()` tables visible (train and test)
 - [ ] First 5 test predictions visible
-- [ ] Video recorded, about 5 minutes, uploaded unlisted, plays in a browser
-- [ ] Video URL added to `README.md`, `docs/PROGRESS.md`, and the notebook's final Excel cell
-      (edit `tools/build_notebook.py`, then rebuild **and** re-run — see section 5)
-- [ ] Excel row filled in with all seven values above
+- [ ] Excel row filled in with all six values above
 - [ ] Everything committed and pushed to GitHub

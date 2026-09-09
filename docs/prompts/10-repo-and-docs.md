@@ -1,8 +1,7 @@
-# 10 — Repository, documentation and the video
+# 10 — Repository and documentation
 
 **Stage:** throughout, and at the end.
-**Produced:** `tools/build_notebook.py`, `CLAUDE.md`, `docs/PROGRESS.md`, `docs/VIDEO_SCRIPT.md`,
-`README.md`.
+**Produced:** `tools/build_notebook.py`, `CLAUDE.md`, `docs/PROGRESS.md`, `README.md`.
 
 ---
 
@@ -72,37 +71,7 @@ not updated at the moment the work happens becomes actively misleading, which is
 
 ---
 
-## Prompt 3 — the video script
-
-```text
-Write docs/VIDEO_SCRIPT.md: a script for the ~5-minute video the assignment requires.
-
-Constraints from the brief: about five minutes, introduce myself at the start, walk through EVERY
-part showing code, output and explanation, and assume the viewer does not know the material.
-
-Structure it as timed segments with, for each: the time range, which notebook cells to have on
-screen, and the actual words to say - written to be spoken aloud, not read silently. Five minutes
-across seven parts is roughly forty seconds each, so it has to be tight.
-
-Two things I want given disproportionate time because they are what demonstrate understanding
-rather than mere completion:
-- why the vectorizer is re-fitted inside every cross-validation fold (leakage);
-- the two negative results and their explanations: that stop-word removal HURTS sentiment
-  classification because the standard list contains "not", "no" and "very", and that the min_df
-  sweep is flat because max_features is the binding pruning constraint.
-
-Also tell me what to say about the gap between my cross-validated score and my test score, because
-that is the most likely question I would get asked.
-
-Finish with a pre-upload checklist.
-```
-
-**What came back:** `docs/VIDEO_SCRIPT.md` — timed segments from 0:00 to 5:00, keyed to cell
-indices, with spoken-word text for each beat and a final checklist.
-
----
-
-## Prompt 4 — repository hygiene
+## Prompt 3 — repository hygiene
 
 ```text
 Prepare the repository for submission. It is public on GitHub and a grader will open it without

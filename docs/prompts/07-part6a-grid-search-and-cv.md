@@ -30,8 +30,8 @@ instead.
 Also state plainly that the test set is not touched anywhere in this section.
 ```
 
-**What came back:** the Part 6a opening markdown, including the leakage paragraph that became the
-single most important sentence in my video script.
+**What came back:** the Part 6a opening markdown, including the leakage paragraph that is the
+single most important sentence in the whole project.
 
 ---
 

@@ -33,7 +33,7 @@ Each file covers one phase of the work and contains:
 | [07](07-part6a-grid-search-and-cv.md) | Part 6a — grid search + 5-fold CV | `run_grid`, `results_df` |
 | [08](08-parts4-5-final-model-and-test.md) | Parts 4 & 5 — final fit, test evaluation | final model, test macro-F1 |
 | [09](09-verification-and-review.md) | Auditing my own work | leakage + rule-compliance checks |
-| [10](10-repo-docs-and-video.md) | Repo, docs and the video | builder script, `VIDEO_SCRIPT.md` |
+| [10](10-repo-and-docs.md) | Repo and docs | builder script, `README.md` |
 
 ## Other resources consulted (not AI)
 

@@ -14,13 +14,10 @@ scratch**. Deliver:
 
 1. **Code notebook** (Colab / Jupyter / GitHub) — outputs visible **without re-running**;
    markdown notes throughout; all visualisations and results included.
-2. **Video** (~5 min, YouTube/unlisted, viewable without download) **or** present in class.
-   Introduce group members at the start; walk through every part showing code + output +
-   explanation, assuming the viewer doesn't know the material. Presenting live earns a bonus.
-3. **Kaggle dataset link.**
-4. **Repository link** — viewable and results-viewable without download.
-5. **Shared Excel row:** assignment type · learning type · algorithm implemented · dataset name ·
-   dataset URL · video URL · repository URL.
+2. **Kaggle dataset link.**
+3. **Repository link** — viewable and results-viewable without download.
+4. **Shared Excel row:** assignment type · learning type · algorithm implemented · dataset name ·
+   dataset URL · repository URL.
 
 Assessment is **primarily on process**, not on model quality.
 
@@ -36,7 +33,6 @@ Assessment is **primarily on process**, not on model quality.
 | Dataset | **IMDB 50K Movie Reviews** — `atulanandjha/imdb-50k-movie-reviews-test-your-bert` (https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert). Stanford `aclImdb`; tagged `nlp` + `text`; ships pre-split **25k train / 25k test**, both labeled, balanced 50/50. |
 | Quality metric | F1 macro-average (see §3) |
 | Scope | Parts 1–5 in full + a light Part 6a. Skip 6b, 6c. |
-| Delivery | ~5-min video (no in-class presentation) |
 | Student details cell | `Tomer R.` + last-4 ID `5130` |
 
 ---
@@ -207,7 +203,7 @@ class NaiveBayesTextClassifier:
 ## 9. Decisions — resolved & open
 
 Resolved: dataset (IMDB 50K, `atulanandjha/...`), split model (use the dataset's own `type`
-column), class structure (binary pos/neg), metric (F1-macro), delivery (video), student details
+column), class structure (binary pos/neg), metric (F1-macro), student details
 (`Tomer R.` / `5130`).
 
 Still open / in-session:

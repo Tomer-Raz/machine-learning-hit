@@ -26,7 +26,7 @@ Constraints:
 ```
 
 **What came back:** the Part 2a markdown. The negation example ("not good" surviving as a single
-feature only if bigrams are on) became one of the talking points in the video script, because it is
+feature only if bigrams are on) became one of the project's main talking points, because it is
 the clearest justification for the `ngram_range=(1,2)` that later wins the grid.
 
 ---
@@ -92,4 +92,4 @@ part (b) shows TF-IDF fixing it — which makes the vectorizer comparison in the
 meaningful instead of arbitrary.
 
 **What I changed:** I asked for fixed row indices rather than sampled rows, so the committed
-outputs are stable across re-runs and the video script can name exactly what will be on screen.
+outputs are stable across re-runs, so the surrounding markdown can name exactly what is shown.

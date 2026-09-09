@@ -31,9 +31,8 @@ Living checklist. Update at the end of every work session; keep the "current sta
   resubstitution macro-F1 0.9068); test set touched exactly once → **test macro-F1 0.8648**,
   with the feature trace on 3 test reviews, the first 5 predictions, the confusion matrix and the
   top-predictive-terms chart.
-- **Next action:** record the ~5-minute video following `VIDEO_SCRIPT.md`, then put its URL into
-  `README.md`, this file, and the notebook's Excel-appendix cell (edit the builder, rebuild,
-  re-execute — a full run takes ~7 minutes).
+- **Next action:** none outstanding — the notebook is the deliverable and it is done. Fill the
+  shared Excel row from the notebook's appendix cell.
 
 ## Milestones
 
@@ -50,8 +49,6 @@ Living checklist. Update at the end of every work session; keep the "current sta
       first 5 predictions; confusion matrix + top-words plots. Executed.
 - [x] 7. Final polish — conclusions cell, Excel-values appendix, docs synced, notebook re-run
       top-to-bottom (55 cells, execution counts 1–25, zero errors) with outputs saved.
-- [ ] 8. Record video (~5 min) — script ready in `VIDEO_SCRIPT.md`; then fill the URL into
-      `README.md`, this file, and the notebook's appendix cell.
 
 ## Decisions log
 
@@ -64,7 +61,7 @@ Living checklist. Update at the end of every work session; keep the "current sta
   split). **Switched to IMDB 50K** (`atulanandjha/imdb-50k-movie-reviews-test-your-bert`)
   because it ships a real pre-split 25k/25k with labels on both sides.
 - 2026-09-02 — Learning type: **binary** (pos/neg sentiment). Metric: **F1 macro-average**
-  (balanced binary, no central class). Delivery: **video**. Student cell: `Tomer R.` / `5130`.
+  (balanced binary, no central class). Student cell: `Tomer R.` / `5130`.
 - 2026-09-09 — `min_df` tie-break: the sweep spans only 4e-5 of macro-F1 (noise) because
   `max_features=30000` already caps the vocabulary, so the winner is **pinned to `min_df=5`**
   rather than taking the raw argmax (`min_df=1`) — simpler and smaller model at an identical score.
@@ -86,5 +83,3 @@ Living checklist. Update at the end of every work session; keep the "current sta
 
 - (none blocking) — grid size, kagglehub-vs-manual download, and Bernoulli-in-grid are
   implementation choices tracked in `ASSIGNMENT.md` §9.
-- Video: the notebook is done; recording is the only remaining deliverable. Script and shot list
-  are in `VIDEO_SCRIPT.md`.

@@ -7,7 +7,7 @@ Orientation for Claude Code sessions on this repo. **Read this first, then `docs
 HIT (Holon Institute of Technology) intro **Machine Learning** course assignment: build an
 end-to-end **supervised-learning pipeline** on a Kaggle **NLP** dataset, with the learning
 algorithm (**Naive Bayes**) **implemented from scratch**. Deliverables: one self-contained
-notebook with committed outputs + a ~5-minute explainer video.
+notebook with committed outputs.
 
 **Grading is primarily on process and understanding, not on the model score.**
 
@@ -25,9 +25,7 @@ notebook with committed outputs + a ~5-minute explainer video.
 > `alpha=0.1` · `min_df=5` · `max_features=30000`** → cross-validated macro-F1 **0.8779** on the
 > training set, **0.8648** on the untouched test set (train resubstitution 0.9068).
 >
-> **Next:** record the ~5-minute video from `docs/VIDEO_SCRIPT.md`, then paste its URL into
-> `README.md`, `docs/PROGRESS.md` and the notebook's Excel-appendix cell (via the builder) and
-> re-run the notebook once.
+> **Next:** nothing outstanding — fill in the shared Excel row from the notebook's appendix cell.
 >
 > Env notes: `.venv` has the full stack; `kagglehub` anonymous download works (no token) and the
 > files are cached locally; `truststore.inject_into_ssl()` in the setup cell handles the corporate
@@ -47,24 +45,16 @@ Update this block and `docs/PROGRESS.md` at the end of every work session.
 | Dataset | **IMDB 50K Movie Reviews** — Kaggle `atulanandjha/imdb-50k-movie-reviews-test-your-bert` (https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert). Stanford `aclImdb`; **ships pre-split 25k train / 25k test, both labeled, balanced 50/50**. |
 | Quality metric | **F1 macro-average** (balanced binary, no single "central" class). Note in notebook that F1-on-positive is near-identical here. |
 | Scope | Core Parts 1–5 in full + a light Part 6a (small grid-search / 5-fold CV). Skip 6b, 6c. |
-| Deliverable | One `notebook.ipynb`, all code inline, outputs committed; ~5-min video (no class presentation) |
+| Deliverable | One `notebook.ipynb`, all code inline, outputs committed |
 
 ## Submission facts
 
-- **Student details cell:** `Tomer R.` · last 4 digits of ID `5130` (full ID 322525130 — do NOT put the full ID in the repo).
 - **Repository:** https://github.com/Tomer-Raz/machine-learning-hit (public)
 - **Dataset URL:** https://www.kaggle.com/datasets/atulanandjha/imdb-50k-movie-reviews-test-your-bert
-- **Video URL:** TBD
-- Excel row needs: assignment type · learning type · algorithm · dataset name · dataset URL · video URL · repo URL
+- Excel row needs: assignment type · learning type · algorithm · dataset name · dataset URL · repo URL
 
 ## Conventions (important)
 
-- **Git identity is repo-local** and already set: `Tomer-Raz <tomer532010@gmail.com>`.
-  (The machine's global identity is a different, work account — do not use it here.)
-- **Never** add a `Co-Authored-By: Claude` trailer or any Claude attribution to commits.
-- Before any push: `gh auth switch --user Tomer-Raz` (multiple gh accounts exist on this machine;
-  `Tomer-Raz` is not always the active one).
-- Commit messages: plain, imperative subject line (e.g. `Add Part 2 feature engineering`).
 - **The notebook is generated.** Edit `tools/build_notebook.py` (each cell is an `md(...)` /
   `code(...)` call), then regenerate + execute:
   ```
@@ -129,7 +119,6 @@ data/                  IMDB data — download script / cell; raw files gitignore
 docs/
   ASSIGNMENT.md         decoded spec, point map, notebook skeleton, NB spec, grid-search/CV spec
   PROGRESS.md           living checklist — update every session
-  VIDEO_SCRIPT.md       timed ~5-min script to record the video from
 src/  tests/            optional iteration scratch (may not exist)
 ```
 
