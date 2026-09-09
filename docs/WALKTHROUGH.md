@@ -396,6 +396,13 @@ ready-made one and checks that they agree, in two ways:
   compared on the 4,981 training reviews held back from that fit — again identical predictions, with
   probabilities matching to **4.26e-13**.
 
+The cell also prints **0.8892** — how well the model scores on that held-out training slice. Do not
+confuse it with the final result. It is a passing sanity check that the classifier works on real
+data at this stage, and it is higher than the final 0.8648 for two reasons: it uses the *baseline*
+settings rather than the tuned ones, and held-out training reviews are reviews of the same films the
+model trained on, whereas the real test set contains different films entirely. Nothing in the project
+is decided from this number.
+
 Note *where* that second comparison happens: on a slice of the **training** set. It needs data the
 models were not fitted on, and the test set is not allowed to be that data — it is reserved for
 Part 5. Holding out a fifth of the training data proves exactly the same thing without reading a
@@ -578,6 +585,13 @@ Cell 29. I compared it against scikit-learn's implementation across several sett
 data, and on the real IMDB features using a held-out fifth of the training set. Probabilities agree
 to within about 4e-13 and every prediction is identical. I used a training slice rather than the
 test set on purpose, so the check costs me nothing in terms of the test-set rule.
+
+**"Cell 29 shows 0.8892, but your final answer is 0.8648. Which is it?"**
+0.8648 — that is the only number measured on the real test set. The 0.8892 in cell 29 is a sanity
+check during the correctness comparison, measured on reviews held out of the *training* set. It is
+higher for two reasons: it uses the untuned baseline configuration, and held-out training reviews
+concern the same films the model learned from, while the test set deliberately contains different
+films. No decision in the project depends on it.
 
 **"Isn't the independence assumption wrong?"**
 Yes, completely — words in real sentences depend heavily on each other. Naive Bayes works anyway

@@ -117,7 +117,8 @@ never the model that produces my results.
 **What came back:** the Part 3c check. On synthetic data it reports a maximum log-probability
 difference of 1.42e-13 with identical predictions, for both the Multinomial and Bernoulli variants;
 on the real IMDB features it fits both models on 19,923 training reviews, compares them on the 4,981
-held out, and reports 4.26e-13 with identical predictions there too.
+held out, and reports 4.26e-13 with identical predictions there too, plus a macro-F1 of 0.8892 on
+that slice as a sanity check that the classifier works on real data at this stage.
 
 **Note on the held-out slice:** the first version of this check ran the real-data comparison on the
 **test** set. That was caught later in the audit — see [09](09-verification-and-review.md) — and

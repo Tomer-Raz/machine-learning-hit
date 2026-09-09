@@ -77,7 +77,9 @@ without stop words → stemmed:
 > uniform. `model_type` switches between Multinomial, which uses term counts, and Bernoulli, which
 > uses presence/absence and explicitly accounts for the words that are *absent*."
 
-**Point at the check output:**
+**Point at the check output:** *(note to self: this cell also prints 0.8892 on the held-out training
+slice. If you mention it at all, say "that is a sanity check on held-out training data with the
+untuned settings, not my result" and move on — the real number comes in Part 5.)*
 
 > "To prove the implementation is right, not just plausible, I compare it against scikit-learn's
 > `MultinomialNB` and `BernoulliNB` across several `alpha` values — the log-probabilities agree to
