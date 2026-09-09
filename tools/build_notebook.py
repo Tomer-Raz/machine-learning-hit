@@ -81,11 +81,34 @@ Information Retrieval*, ch. 13) and was cross-checked against the scikit-learn u
 | Design the evaluation | *"Design a leakage-safe 5-fold cross-validated grid search over feature-engineering options x Naive Bayes hyper-parameters; the vectorizer must be fit inside each fold."* |
 | Explanatory writing | *"Explain TF-IDF / n-grams / Laplace smoothing for a viewer who does not know the material."* |
 
-**Other resources:**
+**Full prompt record.** The table above is a summary. The complete record - every prompt in full,
+what came back, and what was checked, changed or rejected each time - is kept in the repository at
+[`docs/prompts/`](https://github.com/Tomer-Raz/machine-learning-hit/tree/main/docs/prompts), split
+by project phase:
 
+| | |
+|---|---|
+| [01](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/01-understanding-the-brief.md) | decoding the assignment brief |
+| [02](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/02-dataset-selection.md) | choosing the dataset |
+| [03](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/03-part1-loading-and-eda.md) | Part 1 - loading the given split, EDA |
+| [04](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/04-quality-metric.md) | choosing and implementing the quality index |
+| [05](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/05-part2-feature-engineering.md) | Part 2 - feature engineering |
+| [06](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/06-part3-naive-bayes-from-scratch.md) | Part 3 - Naive Bayes from scratch |
+| [07](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/07-part6a-grid-search-and-cv.md) | Part 6a - grid search + cross-validation |
+| [08](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/08-parts4-5-final-model-and-test.md) | Parts 4 & 5 - final model and test evaluation |
+| [09](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/09-verification-and-review.md) | auditing the finished work |
+| [10](https://github.com/Tomer-Raz/machine-learning-hit/blob/main/docs/prompts/10-repo-docs-and-video.md) | repository, documentation and video |
+
+Those prompts are reconstructed from the working sessions - they record the substance of what was
+asked and the constraints imposed, condensed for reading rather than kept as a verbatim log.
+
+**Other resources (not AI):**
+
+- Manning, Raghavan & Schuetze, *Introduction to Information Retrieval*, ch. 13 - the Naive Bayes
+  derivation, the Multinomial and Bernoulli models, and smoothing.
 - scikit-learn User Guide - *Naive Bayes* and *Working with text data*.
 - NLTK documentation - stopword list and the Porter stemmer.
-- Stanford *Large Movie Review Dataset* page (Maas et al., 2011).
+- Stanford *Large Movie Review Dataset* page (Maas et al., 2011) - the dataset and its split.
 """)
 
 md(r"""
